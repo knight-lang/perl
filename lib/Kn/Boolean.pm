@@ -21,4 +21,10 @@ sub dump {
 	'Boolean(' . (shift() ? 'true' : 'false') . ')';
 }
 
+
+# Compares the booleans strings lexicographically.
+sub cmp {
+	(shift() ? 1 : 0) - (shift() ? 1 : 0)
+}
+
 1;

@@ -51,7 +51,12 @@ sub mod {
 
 # Raises the first number to the power of the second.
 sub pow {
-	Kn::Number->new(int(int(shift) ** int(shift)));
+	my $base = int shift;
+	my $exp = int shift;
+
+	die "cannot exponentiate zero by negative power" if !$base && $exp < 0;
+
+	Kn::Number->new(int($base ** $exp));
 }
 
 # Converts both values to integers and compares them.
