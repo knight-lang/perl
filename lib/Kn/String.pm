@@ -54,4 +54,13 @@ sub dump {
 	"String(${shift()})";
 }
 
+# Converts its argument into an ASCII value.
+sub ascii {
+	my $str = ${shift()};
+
+	die "Passed string is empty" if $str eq '';
+
+	Kn::Number->new(ord($str));
+}
+
 1;

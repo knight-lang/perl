@@ -26,4 +26,13 @@ sub dump {
 	"Number(${shift()})";
 }
 
+# Converts its argument into an ASCII string.
+sub ascii {
+	my $num = ${shift()};
+
+	die "Invalid ascii value '$num'." unless 0 < $num && $num <= ord('~');
+
+	Kn::String->new(chr($num));
+}
+
 1;

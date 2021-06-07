@@ -3,7 +3,8 @@ use strict;
 use warnings;
 
 use parent 'Kn::Value';
-use Kn::Environment;
+
+my %VARS;
 
 # Parse an identifier from the start of the stream, which must start with a
 # lower case letter (or `_`), and then may contain any number of digits, lower

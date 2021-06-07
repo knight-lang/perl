@@ -97,6 +97,11 @@ __PACKAGE__->register('O', 1, sub {
 });
 
 # Adds two values together.
+__PACKAGE__->register('A', 1, sub {
+	shift->run()->ascii();
+});
+
+# Adds two values together.
 __PACKAGE__->register('+', 2, sub {
 	shift->run()->add(shift->run());
 });
@@ -150,9 +155,7 @@ __PACKAGE__->register(';', 2, sub {
 # Assigns the second argument to the first. If the first argument is not
 # an identifier, it is first evaluated and then converted to a string.
 __PACKAGE__->register('=', 2, sub {
-	my $var = shift;
-	$var = $var->isa('Kn::Identifier') ? $$var : "$var";
-	Kn::Environment->set($var, shift->run());
+	Kn::Environment->set(${shift()}, shift->run());
 });
 
 # Executes the second argument while the first one evaluates to true. Returns
