@@ -1,14 +1,76 @@
+# use Benchmark qw/cmpthese/;
+# use constant INT_TYPE1 => 0;
+# use constant STR_TYPE1 => 1;
+# use constant INT_TYPE2 => 'i';
+# use constant STR_TYPE2 => 's';
+
+# cmpthese 1e8, {
+# 	int => 'INT_TYPE1 == STR_TYPE1; INT_TYPE1 == INT_TYPE1',
+# 	str => 'INT_TYPE2 eq STR_TYPE2; INT_TYPE2 eq INT_TYPE2'
+# }
+# # cmpthese 1e7, {
+# #   ary => sub{ $x=[1, 2]; $x->[0]; $x->[1]; },
+# #   hsh => sub{ $x={kind=>0, data=>1}; $x->{kind}; $x->{data}; },
+# #   bls => sub{ $q=2; $y = bless \$q; ${$y}; }
+# # }
+
+# __END__
 #!/usr/bin/env perl
 use warnings;
 use strict;
 no warnings 'recursion';
 use Carp qw/cluck/;
 
-our $NULL =  {kind => 'null'};
-our $TRUE =  {kind => 'bool', data => 1};
-our $FALSE = {kind => 'bool', data => 0};
+use constant INT_TYPE => 0;
+use constant STR_TYPE => 1;
+use constant LIST_TYPE => 2;
+use constant BOOL_TYPE => 3;
+use constant NULL_TYPE => 4;
+use constant VAR_TYPE => 5;
+use constant AST_TYPE => 6;
+
+our $NULL =  {kind => NULL_TYPE};
+our $TRUE =  {kind => BOOL_TYPE, data => 1};
+our $FALSE = {kind => BOOL_TYPE, data => 0};
 our %VARS;
 
+sub newint($) { {kind => INT_TYPE, data => int(shift) } }
+sub newstr($) { {kind => STR_TYPE, data => shift } }
+sub newlist { {kind => LIST_TYPE, data => [@_] } }
+sub newbool { shift ? $TRUE : $FALSE }
+
+sub to_int($) {
+	my $value = shift;
+	my $data = $value->{data};
+	my $kind = $value->{kind};
+
+	int($kind == LIST_TYPE ? @$data : $data)
+}
+
+sub to_str($) {
+	my $value = shift;
+	my $data = $value->{data};
+	my $kind = $value->{kind};
+
+	return $data if $kind <= STR_TYPE;
+	return join "\n", @$data if $kind == LIST_TYPE;
+	return '' if $value == $NULL;
+	$value == $TRUE ? 'true' : 'false'
+}
+
+sub to_bool($) {
+	my $value = shift;
+	my $data = $value->{data};
+	my $kind = $value->{kind};
+
+	return $data eq '' if $kind == STR_TYPE;
+	return scalar @$data if $kind == LIST_TYPE;
+	$data
+}
+
+$\="\n";
+
+__END__
 sub newvar  { $VARS{$_[0]} ||= {kind => 'var', name => $_[0], data => 0} }
 sub newnum  { {kind => 'num',  data => int(shift)} }
 sub newstr  { unless(defined $_[0]){
@@ -68,13 +130,13 @@ sub dumpval {
 	my $val = shift;
 
 	if ($val->{kind} eq 'str') {
-		print "String($val->{data})"
+		print $val->{data}
 	} elsif ($val->{kind} eq 'num') {
-		print "Number($val->{data})"
+		print $val->{data};
 	} elsif ($val eq $NULL) {
-		print 'Null()';
-	} else {
-		print 'Boolean(' . ($val == $TRUE ? 'true' : 'false') . ')';
+		print 'null';
+	} elsif  {
+		print $val == $TRUE ? 'true' : 'false';
 	}
 }
 
