@@ -1,4 +1,5 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
+
 use warnings;
 use strict;
 
@@ -27,7 +28,7 @@ our $FALSE = { kind => BOOL_KIND, data => 0 };
 ###############
 our %known_variables;
 sub lookup_variable {
-	my ($name) = @_;
+	my $name = shift;
 	$known_variables{$name} ||= { kind => VAR_KIND, data => undef }
 }
 
@@ -38,30 +39,35 @@ sub assign_variable {
 
 sub run;
 
-sub kind :prototype(_) { shift->{kind} }
-sub data :prototype(_) { shift->{data} }
-sub adata :prototype(_) { @{data shift} }
+sub explode {
+	@{shift()}{'kind','data'}
+}
 
+sub new_int {
+	{kind => INT_KIND, data => int shift}
+}
 
-sub newint { {kind => INT_KIND, data => int(shift)} }
-sub newstr { {kind => STR_KIND, data => shift} }
-sub newlist { {kind => LIST_KIND, data => [@_] } }
-sub newbool { shift ? $TRUE : $FALSE }
+sub new_str {
+	{kind => STR_KIND, data => shift}
+}
+
+sub new_list {
+	{kind => LIST_KIND, data => [@_]}
+}
+
+sub new_bool { shift ? $TRUE : $FALSE }
 
 ######################
 # Conversion Methods #
 ######################
 sub run_if_needed {
 	my $value = shift;
-	$value = run $value if $value->{kind} <= VAR_KIND;
+	$value = run $value if VAR_KIND <= $value->{kind};
 	$value
 }
 
 sub to_int {
-	print $_[0]->{kind};
-	my $value = run_if_needed shift;
-	print $value->{kind};
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode run_if_needed shift;
 
 	return int @$data if $kind == LIST_KIND;
 	return int $data unless $kind == STR_KIND;
@@ -71,18 +77,16 @@ sub to_int {
 }
 
 sub to_str {
-	my $value = run_if_needed shift;
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode run_if_needed shift;
 
 	return $data if $kind <= STR_KIND;
-	return join "\n", map{ to_str($_) } @$data if $kind <= LIST_KIND;
+	return join "\n", map{to_str($_)} @$data if $kind == LIST_KIND;
 	return '' if $kind == NULL_KIND;
 	$data ? 'true' : 'false'
 }
 
 sub to_bool {
-	my $value = run_if_needed shift;
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode run_if_needed shift;
 
 	return '' ne $data if $kind == STR_KIND;
 	return scalar @$data if $kind == LIST_KIND;
@@ -90,80 +94,92 @@ sub to_bool {
 }
 
 sub to_list {
-	my $value = run_if_needed shift;
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode run_if_needed shift;
 
 	return @$data if $kind == LIST_KIND;
-	return map {newstr $_} split(//, $data) if $kind == STR_KIND;
+	return map {new_str $_} split(//, $data) if $kind == STR_KIND;
 
 	if ($kind == INT_KIND) {
-		my $is_neg = 0 > $data;
-		return map {$is_neg and $_ = -$_; newint $_} split //, abs $data
+		my $is_neg = $data < 0;
+		return map {$is_neg and $_ = -$_; new_int $_} split //, abs $data
 	}
 
-	$data ? $TRUE : ();
+	$data ? ($TRUE) : ();
 }
 
 sub repr {
-	my $value = run_if_needed shift;
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode shift;
 
 	return $data if $kind == INT_KIND;
 	return $data ? 'true' : 'false' if $kind == BOOL_KIND;
 	return 'null' if $kind == NULL_KIND;
-	return '[' . join(', ', map {repr($_)} adata) . ']' if $kind == LIST_KIND;
-
-	my $r = '"';
-	foreach (split //, $data) {
-		if ($_ eq "\r") { $r .= '\r'; next }
-		if ($_ eq "\n") { $r .= '\n'; next }
-		if ($_ eq "\t") { $r .= '\t'; next }
-		$r .= '\\' if $_ eq '\\' || $_ eq '"';
-		$r .= $_;
+	return '[' . join(', ', map {repr($_)} @$data) . ']' if $kind == LIST_KIND;
+	if ($kind == STR_KIND) {
+		my $r = '"';
+		foreach (split //, $data) {
+			if ($_ eq "\r") { $r .= '\r'; next }
+			if ($_ eq "\n") { $r .= '\n'; next }
+			if ($_ eq "\t") { $r .= '\t'; next }
+			$r .= '\\' if $_ eq '\\' || $_ eq '"';
+			$r .= $_;
+		}
+		return $r . '"'
 	}
-	$r . '"';
+	"<other>"
 }
 
-sub are_eql :prototype($$);
-sub are_eql :prototype($$) {
-	$_ = shift;
-	my $rhs = shift;
 
-	return 1 if $_ == $rhs;
-	return 0 unless kind $rhs == kind;
+# print to_bool new_str "";
+# exit;
+# print !to_bool $FALSE;
 
-	return data $rhs == data if kind($_) == INT_KIND;
-	return data $rhs eq data if kind($_) == STR_KIND;
-	return 0 unless kind($_) == LIST_KIND;
+# print repr to_list new_int 123;
+# exit;
 
-	my @l = adata;
-	my @r = adata $rhs;
+sub are_eql {
+	my ($lhs, $rhs) = @_;
+	return 1 if $lhs == $rhs;
+
+	my ($lkind, $ldata) = explode $lhs;
+	my ($rkind, $rdata) = explode $rhs;
+
+	return 0 unless $lkind == $rkind;
+	return $ldata == $rdata if $lkind == INT_KIND;
+	return $ldata eq $rdata if $lkind == STR_KIND;
+	return 0 unless $lkind == LIST_KIND;
+
+	my @l = @$ldata;
+	my @r = @$rdata;
 	return 0 unless $#l == $#r;
 	are_eql($l[$_], $r[$_]) or return 0 for 0..$#l;
 	1
 }
 
-sub compare :prototype($$);
-sub compare :prototype($$) {
-	$_ = shift;
+sub compare {
+	my ($lhs, $rhs) = @_;
+	my ($lkind, $ldata) = explode $lhs;
 
-	return data() <=> to_int(shift) if kind($_) == INT_KIND;
-	return data() cmp to_str(shift) if kind($_) == STR_KIND;
-	return data() <=> !!to_bool(shift) if kind($_) == BOOL_KIND;
-	my @lhs = adata;
-	my @rhs = to_list shift;
+	return $ldata <=> to_int $rhs if $lkind == INT_KIND;
+	return $ldata cmp to_str $rhs if $lkind == STR_KIND;
+	return $ldata <=> !!to_bool $rhs if $lkind == BOOL_KIND;
+
+	my @lhs = @$ldata;
+	my @rhs = to_list $rhs;
 	my $limit = $#lhs < $#rhs ? $#lhs : $#rhs;
-	for (my $i = 0; $i <= $limit; $i++) {
-		my $cmp = compare($lhs[$i], $rhs[$i]);
-		return $cmp if $cmp;
-	}
-	$#lhs <=> $#rhs
 
+	# Compare individual elements
+	my $cmp;
+	for (my $i = 0; $i <= $limit; $i++) {
+		$cmp = compare($lhs[$i], $rhs[$i]) and return $cmp;
+	}
+
+	# Compare lengths
+	$#lhs <=> $#rhs
 }
 
 sub run {
 	my $value = shift;
-	my ($kind, $data) = @{$value}{'kind','data'};
+	my ($kind, $data) = explode $value;
 
 	return $value if $kind < VAR_KIND;
 	return $data if $kind == VAR_KIND;
@@ -173,110 +189,129 @@ sub run {
 
 sub parse :prototype(_);
 
-my %functions = (
-	'P' => [0, sub { newstr scalar <>; }],
-	'R' => [0, sub { newint int rand 0xffff_ffff }],
+our %functions;
+sub register {
+	my ($name, $arity, $sub) = @_;
+	$functions{$name} = [$arity, $sub];
+}
 
-	'E' => [1, sub { run parse to_str shift }],
-	'B' => [1, sub { shift }],
-	'C' => [1, sub { run run shift }],
-	'`' => [1, sub { my $str = to_str shift; newstr scalar `$str` }],
-	'Q' => [1, sub { exit to_int shift }],
-	'!' => [1, sub { newbool !to_bool shift }],
-	'L'  => [1, sub { my @a = to_list shift; newint scalar @a }],
-	'D'  => [1, sub { $_ = run shift; print repr $_; $_ }],
-	'O'  => [1, sub { $_ = to_str shift; s/\\$// or $_ .= "\n"; print; $NULL }],
-	'A'  => [1, sub {
-		$_ = run shift;
-		return newstr chr data if kind($_) == INT_KIND;
-		newint ord data
-	}],
-	'~'  => [1, sub { newint -to_int shift }],
-	','  => [1, sub { newlist run shift }],
-	'['  => [1, sub {
-		$_ = run shift;
-		return newstr substr data, 0, 1 if kind($_) == STR_KIND;
-		(adata)[0];
-	}],
-	']'  => [1, sub {
-		$_ = run shift;
-		return newstr substr data, 1, length data if kind($_) == STR_KIND;
-		my @list = adata;
-		newlist @list[1..$#list];
-	}],
+register 'P', 0, sub {
+	my $line = <>;
+	return $NULL unless defined $line;
+	$line =~ s/\r*\n?$//;
+	new_str $line
+};
+register 'R', 0, sub { new_int int rand 0xffff_ffff };
+register 'E', 1, sub { run parse to_str shift };
+register 'B', 1, sub { shift };
+register 'C', 1, sub { run run shift };
+register '`', 1, sub { my $str = to_str shift; new_str scalar `$str` };
+register 'Q', 1, sub { exit to_int shift };
+register '!', 1, sub { new_bool !to_bool shift };
+register 'L', 1, sub { my @l = to_list shift; new_int scalar @l };
+register 'D', 1, sub { my $value = run shift; print repr $value; $value };
+register 'O', 1, sub { $_ = to_str shift; s/\\$// or $_ .= "\n"; print; $NULL };
+register 'A', 1, sub {
+	my ($kind, $data) = explode run shift;
+	$kind == INT_KIND ? new_str(chr $data) : new_int(ord $data)
+};
+register '~', 1, sub { new_int -to_int shift };
+register ',', 1, sub { new_list run shift };
+register '[', 1, sub {
+	my ($kind, $data) = explode run shift;
+	return new_str substr $data, 0, 1 if $kind == STR_KIND;
+	$data->[0]
+};
+register ']', 1, sub {
+	my ($kind, $data) = explode run shift;
+	return new_str substr $data, 1 if $kind == STR_KIND;
+	my @list = @$data;
+	new_list @list[1..$#list];
+};
 
-	'+' => [2, sub {
-		$_ = run shift;
-		return newint data() + to_int shift if kind($_) == INT_KIND;
-		return newstr data() . to_str shift if kind($_) == STR_KIND;
-		newlist adata, to_list shift
-	}],
-	'-' => [2, sub { newint to_int(shift) - to_int(shift) }],
-	'*' => [2, sub {
-		my $tmp = run shift;
-		my $amnt = to_int shift;
-		$_ = $tmp;
+register '+', 2, sub {
+	my ($kind, $data) = explode run shift;
 
-		return newint data() * $amnt if kind($_) == INT_KIND;
-		return newstr data() x $amnt if kind($_) == STR_KIND;
+	return new_int $data + to_int shift if $kind == INT_KIND;
+	return new_str $data . to_str shift if $kind == STR_KIND;
+	new_list @$data, to_list shift
+};
 
-		my @list;
-		@list = (@list, adata) while ($amnt--);
-		newlist @list
-	}],
-	'/' => [2, sub { newint to_int(shift) / to_int(shift) }],
-	'%' => [2, sub { newint to_int(shift) % to_int(shift) }],
-	'^' => [2, sub {
-		$_ = run shift;
-		return newint data() ** to_int shift if kind($_) == INT_KIND;
-		my @eles = adata;
-		newstr join to_str(shift), map{to_str $_} @eles
-	}],
-	'<' => [2, sub { newbool(0 > compare run(shift), run(shift)) }],
-	'>' => [2, sub { newbool(0 < compare run(shift), run(shift)) }],
-	'?' => [2, sub { newbool are_eql run(shift), run(shift) }],
-	'&' => [2, sub { $_ = run shift; to_bool($_) ? run(shift) : $_; }],
-	'|' => [2, sub { $_ = run shift; to_bool($_) ? $_ : run(shift); }],
-	';' => [2, sub { run shift; run shift }],
-	'=' => [2, sub { assign_variable $_[0], run $_[1]; }],
-	'W' => [2, sub { run $_[1] while to_bool $_[0]; $NULL }],
+register '-', 2, sub { new_int to_int(shift) - to_int(shift) };
+register '*', 2, sub {
+	my ($kind, $data) = explode run shift;
+	my $amnt = to_int shift;
 
-	'I' => [3, sub { run $_[!to_bool shift] }],
-	'G' => [3, sub {
-		my $cont = run shift;
-		my $idx = to_int shift;
-		my $len = to_int shift;
+	return new_int $data * $amnt if $kind == INT_KIND;
+	return new_str $data x $amnt if $kind == STR_KIND;
 
-		return newstr substr data $cont, $idx, $len if kind($cont) == STR_KIND;
-		my @list = adata $cont;
-		newlist @list[$idx..$idx + $len - 1]
-	}],
-	'S' => [4, sub {
-		my $cont = run shift;
-		my $idx = to_int shift;
-		my $len = to_int shift;
-		my $repl = run shift;
+	my @list;
+	@list = (@list, @$data) while ($amnt--);
+	new_list @list
+};
+register '/', 2, sub { new_int to_int(shift) / to_int(shift) };
+register '%', 2, sub { new_int to_int(shift) % to_int(shift) };
+register '^', 2, sub {
+	my ($kind, $data) = explode run shift;
+	return new_int $data ** to_int shift if $kind == INT_KIND;
 
-		if (kind($cont) == STR_KIND) {
-			return newstr substr(data $cont, 0, $idx) . to_str($repl) . substr(data $cont, $idx + $len);
-		}
+	new_str join to_str(shift), map{to_str $_} @$data
+};
+register '<', 2, sub { new_bool(0 > compare run(shift), run(shift)) };
+register '>', 2, sub { new_bool(0 < compare run(shift), run(shift)) };
+register '?', 2, sub { new_bool are_eql run(shift), run(shift) };
+register '&', 2, sub { my $v = run shift; to_bool($v) ? run(shift) : $v; };
+register '|', 2, sub { my $v = run shift; to_bool($v) ? $v : run(shift); };
+register ';', 2, sub { run shift; run shift };
+register '=', 2, sub {
+	my ($variable, $value) = @_;
+	assign_variable $variable, run $value;
+};
+register 'W', 2, sub {
+	my ($cond, $body) = @_;
+	run $body while to_bool $cond;
+	$NULL
+};
 
-		my @list = adata $cont;
-		return newlist @list[0..$idx-1], to_list($repl), @list[$idx + $len..$#list];
-	}]
-);
+register 'I', 3, sub {
+	my ($cond, $iftrue, $iffalse) = @_;
+	run(to_bool($cond) ? $iftrue : $iffalse)
+};
+
+register 'G', 3, sub {
+	my ($kind, $data) = explode run shift;
+	my $idx = to_int shift;
+	my $len = to_int shift;
+
+	return new_str substr $data, $idx, $len if $kind == STR_KIND;
+	my @list = @$data;
+	new_list @list[$idx..$idx + $len - 1]
+};
+register 'S', 4, sub {
+	my ($kind, $data) = explode run shift;
+	my $idx = to_int shift;
+	my $len = to_int shift;
+	my $repl = run shift;
+
+	if ($kind == STR_KIND) {
+		return new_str substr($data, 0, $idx) . to_str($repl) . substr($data, $idx + $len);
+	}
+
+	my @list = @$data;
+	return new_list @list[0..$idx-1], to_list($repl), @list[$idx + $len..$#list];
+};
 
 sub parse :prototype(_);
 sub parse :prototype(_) {
 	$_ = shift;
 	s/^(?:[\s():]|#\N*)+//;
 
-	s/^\d+// and return newint $&;
-	s/^(["'])(.*?)\1//s and return newstr $2;
+	s/^\d+// and return new_int $&;
+	s/^(["'])(.*?)\1//s and return new_str $2;
 	s/^[a-z_][a-z0-9_]*// and return lookup_variable $&;
-	s/^([TF])[A-Z_]*// and return newbool($1 eq 'T');
+	s/^([TF])[A-Z_]*// and return new_bool($1 eq 'T');
 	s/^N[A-Z_]*// and return $NULL;
-	s/^@// and return newlist;
+	s/^@// and return new_list;
 
 	s/^([A-Z]+|.)// or return;
 	my $name = substr $1, 0, 1;
@@ -290,9 +325,10 @@ sub parse :prototype(_) {
 	{ kind => FUNC_KIND, func => $func, args => \@args }
 }
 
-my $flag = shift;
-
-die "usage: $0 (-e 'expr' | -f file)" unless !$#ARGV && ($flag eq '-e' || $flag eq '-f');
+my $flag = shift @ARGV;
+unless ($#ARGV == 0 && ($flag eq '-e' || $flag eq '-f')) {
+	die "usage: $0 (-e 'expr' | -f file)"
+}
 
 my $expr = parse($flag eq '-e' ? shift : join '', <>) or die 'nothing to parse?';
 run $expr;
