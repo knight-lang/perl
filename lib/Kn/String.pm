@@ -5,13 +5,18 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'bool' => sub { ${shift->run()} ne '' },
+	'bool' => sub { ${shift()} ne '' },
 	'0+' => sub {
 		no warnings;
 
 		${shift()} =~ m/^\s*[-+]?\d*/p;
 
 		int ${^MATCH};
+	},
+	'@{}' => sub {
+		my $str = ${shift()};
+		my @list = map {Kn::String->new($_)} split //, $str;
+		\@list
 	};
 
 # Converts both arguments to a string and concatenates them.
@@ -51,7 +56,17 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	"String(${shift()})";
+	my $str = ${shift()};
+	my $dump = '"';
+	foreach (split //, $str) {
+		if ($_ eq "\r") { $dump .= '\r'; next }
+		if ($_ eq "\n") { $dump .= '\n'; next }
+		if ($_ eq "\t") { $dump .= '\t'; next }
+		$dump .= '\\' if $_ eq '\\' || $_ eq '"';
+		$dump .= $_;
+	}
+
+	$dump . '"'
 }
 
 # Converts its argument into an ASCII value.

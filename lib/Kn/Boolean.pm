@@ -5,7 +5,8 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'""' => sub { shift() ? 'true' : 'false'; };
+	'""' => sub { shift() ? 'true' : 'false'; },
+	'@{}' => sub { my @l = shift() || (); \@l };
 
 # Parses a new boolean.
 sub parse {
@@ -18,9 +19,8 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'Boolean(' . (shift() ? 'true' : 'false') . ')';
+	shift() ? 'true' : 'false';
 }
-
 
 # Compares the booleans strings lexicographically.
 sub cmp {

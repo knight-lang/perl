@@ -93,6 +93,7 @@ use Kn::Identifier;
 use Kn::Null;
 use Kn::String;
 use Kn::Ast;
+use Kn::List;
 
 # Parses a Value from the stream, stripping leading whitespace and comments.
 # If the first character of the stream is invalid, the program `die`s.
@@ -100,11 +101,11 @@ sub parse {
 	my $stream = $_[1];
 	my $ret;
 
-	while ($$stream =~ s/\A(?:[\s()\[\]{}:]+|#[^\n]*)//) {
+	while ($$stream =~ s/\A(?:[\s():]+|#[^\n]*)//) {
 		# do nothing, we're stripping the steram.
 	}
 
-	for (qw(Kn::Number Kn::Identifier Kn::Null Kn::String Kn::Boolean Kn::Ast)){
+	for (qw(Kn::Number Kn::Identifier Kn::Null Kn::String Kn::Boolean Kn::Ast Kn::List)){
 		$ret = $_->parse($stream);
 		return $ret if defined $ret;
 	}

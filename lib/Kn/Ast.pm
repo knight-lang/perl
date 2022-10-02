@@ -22,6 +22,10 @@ sub new {
 	bless { func => $func, op => $op, args => \@args }, $class;
 }
 
+sub list {
+	shift->run()->list();
+}
+
 # An Ast is only equivalent to itself.
 sub eql {
 	use Scalar::Util 'refaddr';

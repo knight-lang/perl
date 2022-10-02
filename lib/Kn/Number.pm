@@ -4,6 +4,13 @@ use warnings;
 
 use parent 'Kn::Value';
 
+use overload 
+	'@{}' => sub {
+		my $num = ${shift()};
+		my @map = map {Kn::Number->new($num < 0 ? -$_ : $_)} split //, abs $num;
+		\@map
+	};
+
 # Parses out a `Kn::Number` from the start of a stream.
 # A Number is simply a sequence of digits. (The character after the number is
 # ignored; `12a` will be parsed as the number 12, and sets the stream to `a`.)
@@ -23,7 +30,7 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	"Number(${shift()})";
+	shift;
 }
 
 # Converts its argument into an ASCII string.

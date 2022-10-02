@@ -4,9 +4,11 @@ use warnings;
 
 use parent 'Kn::Value';
 
+my @empty;
 use overload
 	'0+' => sub { 0 },
-	'""' => sub { 'null' };
+	'""' => sub { '' },
+	'@{}' => sub { \@empty };
 
 my $null;
 # Unlike every other value, `Null`s do not take arguments.
@@ -31,10 +33,9 @@ sub cmp {
 	die "Comparing by null is not allowed.";
 }
 
-
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'Null()';
+	'null';
 }
 
 1;
