@@ -126,7 +126,7 @@ sub repr {
 	$kind == KIND_BOOL and return $data ? 'true' : 'false';
 	$kind == KIND_NULL and return 'null';
 	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
-	$kind == KIND_STR   or return '<other>';
+	$kind == KIND_STR  or  return '<other>';
 
 	$_ = $data;
 	s/[\\"]/\\$&/g;
@@ -145,7 +145,7 @@ sub are_eql {
 	my ($lkind, $ldata) = @$lhs;
 	$lkind == KIND_INT  and return $ldata == $rhs->[IDX_DATA];
 	$lkind == KIND_STR  and return $ldata eq $rhs->[IDX_DATA];
-	$lkind == KIND_LIST  or return 0; # All other kinds aren't equal
+	$lkind == KIND_LIST or  return 0; # All other kinds aren't equal
 
 	my @l = @$ldata;
 	my @r = @{$rhs->[IDX_DATA]};
@@ -162,7 +162,7 @@ sub compare {
 	$lkind == KIND_INT  and return $ldata <=> to_int $rhs;
 	$lkind == KIND_STR  and return $ldata cmp to_str $rhs;
 	$lkind == KIND_BOOL and return $ldata <=> !!to_bool $rhs;
-	$lkind == KIND_LIST  or die "cannot compare $lkind";
+	$lkind == KIND_LIST or  die "cannot compare $lkind";
 
 	my @lhs = @$ldata;
 	my @rhs = to_list $rhs;
@@ -180,13 +180,12 @@ sub compare {
 
 # Executes its argument.
 sub run {
-	my $value = shift;
+	my ($value) = @_;
 	$value->[IDX_KIND] < KIND_VAR  and return $value;
 	$value->[IDX_KIND] == KIND_VAR and return $value->[IDX_DATA];
 
-	# Manual tail-call recursion lmao
-	@_ = @$value; shift;
-	goto shift;
+	(undef, my $sub, @_) = @$value;
+	goto &$sub;
 }
 
 ####################################################################################################
@@ -201,12 +200,10 @@ sub register {
 
 # Reads a line from stdin.
 register 'P', 0, sub {
-	my $line = <STDIN>;
-
-	return KN_NULL unless defined $line; # Ensure a line is read in
-
-	$line =~ s/\r*\n?$//; # Strip trailing `\r\n`
-	new_str $line
+	$_ = <STDIN>; # Technically `<>` is the same, as the command-line args are all handled.
+	return KN_NULL unless defined; # Ensure a line is read in
+	s/\r*\n?$//; # Strip trailing `\r\n`
+	new_str $_
 };
 
 # Gets a random integer from 0-0xffffffff
@@ -232,8 +229,8 @@ register 'C', 1, sub {
 
 # Executes its argument as a shell command, and returns it.
 register '$', 1, sub {
-	my $str = to_str shift;
-	new_str scalar `$str`
+	my $shell_command = to_str shift;
+	new_str scalar `$shell_command`
 };
 
 # Stops the interpreter with the given exit code.
@@ -333,7 +330,7 @@ register '*', 2, sub {
 
 	$kind == KIND_INT  and return new_int $data * $amnt;
 	$kind == KIND_STR  and return new_str $data x $amnt;
-	$kind == KIND_LIST  or die "cannot multiply $kind";
+	$kind == KIND_LIST or  die "cannot multiply $kind";
 
 	my @list;
 	@list = (@list, @$data) while $amnt--;
