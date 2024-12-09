@@ -82,7 +82,6 @@ sub to_int {
 	int $data
 }
 
-
 # Converts its argument to a string.
 sub to_str {
 	my ($kind, $data) = @{run_if_needed shift};
@@ -109,8 +108,8 @@ sub to_list {
 	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_LIST and return @$data;
-	$kind == KIND_STR  and return map {new_str $_} split(//, $data);
-	$kind == KIND_INT  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
+	$kind == KIND_STR  and return map {new_str $_} split //, $data;
+	$kind == KIND_INT  and return map {new_int $data < 0 ? -$_ : $_} split //, abs $data;
 
 	$data ? KN_TRUE : ()
 }
@@ -127,7 +126,7 @@ sub repr {
 	$kind == KIND_BOOL and return $data ? 'true' : 'false';
 	$kind == KIND_NULL and return 'null';
 	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
-	$kind != KIND_STR  and return '<other>';
+	$kind == KIND_STR   or return '<other>';
 
 	$_ = $data;
 	s/[\\"]/\\$&/g;
@@ -140,13 +139,13 @@ sub repr {
 # Sees if two values are equal. Essentially `==`/`eq` for values.
 sub are_eql {
 	my ($lhs, $rhs) = @_;
-	$lhs == $rhs                         and return 1; # Exact same object
-	$lhs->[IDX_KIND] != $rhs->[IDX_KIND] and return 0; # Kinds aren't the same
+	return 1 if $lhs == $rhs; # Exact same object
+	return 0 unless $lhs->[IDX_KIND] == $rhs->[IDX_KIND]; # Kinds aren't the same
 
 	my ($lkind, $ldata) = @$lhs;
 	$lkind == KIND_INT  and return $ldata == $rhs->[IDX_DATA];
 	$lkind == KIND_STR  and return $ldata eq $rhs->[IDX_DATA];
-	$lkind != KIND_LIST and return 0; # All other kinds aren't equal
+	$lkind == KIND_LIST  or return 0; # All other kinds aren't equal
 
 	my @l = @$ldata;
 	my @r = @{$rhs->[IDX_DATA]};
@@ -163,7 +162,7 @@ sub compare {
 	$lkind == KIND_INT  and return $ldata <=> to_int $rhs;
 	$lkind == KIND_STR  and return $ldata cmp to_str $rhs;
 	$lkind == KIND_BOOL and return $ldata <=> !!to_bool $rhs;
-	$lkind != KIND_LIST and die "cannot compare $lkind";
+	$lkind == KIND_LIST  or die "cannot compare $lkind";
 
 	my @lhs = @$ldata;
 	my @rhs = to_list $rhs;
@@ -203,8 +202,10 @@ sub register {
 # Reads a line from stdin.
 register 'P', 0, sub {
 	my $line = <STDIN>;
-	return KN_NULL unless defined $line;
-	$line =~ s/\r*\n?$//;
+
+	return KN_NULL unless defined $line; # Ensure a line is read in
+
+	$line =~ s/\r*\n?$//; # Strip trailing `\r\n`
 	new_str $line
 };
 
@@ -214,8 +215,8 @@ register 'R', 0, sub {
 };
 
 # Evaluates its argument as knight code.
-sub play;
 register 'E', 1, sub {
+	sub play;
 	play to_str shift
 };
 
@@ -272,8 +273,10 @@ register 'O', 1, sub {
 # Returns either the `chr` or `ord` of its argument, depending on its type.
 register 'A', 1, sub {
 	my ($kind, $data) = @{run shift};
+
 	$kind == KIND_INT and return new_str chr $data;
 	$kind == KIND_STR and return new_int ord $data;
+
 	die "cannot ascii $kind";
 };
 
@@ -330,7 +333,7 @@ register '*', 2, sub {
 
 	$kind == KIND_INT  and return new_int $data * $amnt;
 	$kind == KIND_STR  and return new_str $data x $amnt;
-	$kind != KIND_LIST and die "cannot multiply $kind";
+	$kind == KIND_LIST  or die "cannot multiply $kind";
 
 	my @list;
 	@list = (@list, @$data) while $amnt--;
@@ -339,12 +342,12 @@ register '*', 2, sub {
 
 # Divides the first argument by the second. Second cannot be zero.
 register '/', 2, sub {
-	new_int to_int(shift) / (to_int(shift) or die "cannot divide by zero")
+	new_int to_int(shift) / (to_int shift or die "cannot divide by zero")
 };
 
 # Modulos the first argument by the second. Second cannot be zero.
 register '%', 2, sub {
-	new_int to_int(shift) % (to_int(shift) or die "cannot modulo by zero")
+	new_int to_int(shift) % (to_int shift or die "cannot modulo by zero")
 };
 
 # Exponentiates integers or `join`s a list by a string.
@@ -373,14 +376,14 @@ register '?', 2, sub {
 };
 
 # If the executed first argument is falsey, it's returned. Otherwise the second
-# executed and returned.
+# is executed and returned.
 register '&', 2, sub {
 	my $value = run shift;
 	to_bool($value) ? run shift : $value;
 };
 
 # If the executed first argument is truthy, it's returned. Otherwise the second
-# executed and returned.
+# is executed and returned.
 register '|', 2, sub {
 	my $value = run shift;
 	to_bool($value) ? $value : run shift;
@@ -455,6 +458,7 @@ register 'S', 4, sub {
 #                                             Parsing                                              #
 ####################################################################################################
 
+# Parse a variable out
 sub parse {
 	$_ = shift;
 
@@ -484,6 +488,7 @@ sub parse {
 	new_func $func, @args
 }
 
+# Parse a program and execute it
 sub play {
 	my $program = parse shift or die "no program given";
 	run $program
