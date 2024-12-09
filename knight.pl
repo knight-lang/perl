@@ -20,20 +20,24 @@ use constant KIND_BOOL => 3;
 use constant KIND_NULL => 4;
 use constant KIND_VAR  => 5;
 use constant KIND_FUNC => 6;
-# use constant KIND_IDX => 6;
 
-our $NULL =  { kind => KIND_NULL, data => 0 };
-our $TRUE =  { kind => KIND_BOOL, data => 1 };
-our $FALSE = { kind => KIND_BOOL, data => 0 };
+use constant IDX_KIND => 0;
+use constant IDX_DATA => 1;
+use constant IDX_FUNC => 1;
+use constant IDX_ARGS => 2;
 
-sub new_int  { {kind => KIND_INT,  data => int shift} }
-sub new_str  { {kind => KIND_STR,  data => shift} }
-sub new_list { {kind => KIND_LIST, data => [@_]} }
+our $NULL =  [KIND_NULL, 0];
+our $TRUE =  [KIND_BOOL, 1];
+our $FALSE = [KIND_BOOL, 0];
+
+sub new_int  { [KIND_INT,  int shift] }
+sub new_str  { [KIND_STR,  shift] }
+sub new_list { [KIND_LIST, [@_]] }
 sub new_bool { shift ? $TRUE : $FALSE }
 
 our %known_variables;
 sub lookup_variable {
-	$known_variables{$_[0]} ||= { kind => KIND_VAR, data => undef }
+	$known_variables{$_[0]} ||= [KIND_VAR, undef]
 }
 
 ####################################################################################################
@@ -42,13 +46,13 @@ sub lookup_variable {
 
 # Returns the data and kind of its argument
 sub explode {
-	@{shift()}{'kind','data'}
+	@{shift()}[IDX_KIND, IDX_DATA]
 }
 
 sub run;
 sub run_if_needed {
 	my $value = shift;
-	KIND_VAR <= $value->{kind} ? run $value : $value;
+	KIND_VAR <= $value->[IDX_KIND] ? run $value : $value;
 }
 
 ####################################################################################################
@@ -65,6 +69,7 @@ sub to_int {
 
 	int $data
 }
+
 
 # Converts its argument to a string.
 sub to_str {
@@ -128,15 +133,15 @@ sub repr {
 sub are_eql {
 	my ($lhs, $rhs) = @_;
 	$lhs == $rhs                 and return 1; # Exact same object
-	$lhs->{kind} != $rhs->{kind} and return 0; # Kinds aren't the same
+	$lhs->[IDX_KIND] != $rhs->[IDX_KIND] and return 0; # Kinds aren't the same
 
 	my ($lkind, $ldata) = explode $lhs;
-	$lkind == KIND_INT  and return $ldata == $rhs->{data};
-	$lkind == KIND_STR  and return $ldata eq $rhs->{data};
+	$lkind == KIND_INT  and return $ldata == $rhs->[IDX_DATA];
+	$lkind == KIND_STR  and return $ldata eq $rhs->[IDX_DATA];
 	$lkind != KIND_LIST and return 0; # All other kinds aren't equal
 
 	my @l = @$ldata;
-	my @r = @{$rhs->{data}};
+	my @r = @{$rhs->[IDX_DATA]};
 	return 0 unless $#l == $#r;
 	are_eql($l[$_], $r[$_]) or return 0 for 0..$#l;
 	1
@@ -175,8 +180,8 @@ sub run {
 	$kind == KIND_VAR and return $data;
 
 	# Manual tail-call recursion lmao
-	@_ = @{$value->{args}};
-	goto $value->{func}
+	@_ = @{$value->[IDX_ARGS]};
+	goto $value->[IDX_FUNC]
 }
 
 ####################################################################################################
@@ -384,8 +389,8 @@ register ';', 2, sub {
 # Assigns the first argument to the second. The first must be a variable.
 register '=', 2, sub {
 	my ($variable, $value) = @_;
-	$variable->{kind} == KIND_VAR or die "can't assign to $variable->{kind}";
-	$variable->{data} = run $value
+	$variable->[IDX_KIND] == KIND_VAR or die "can't assign to $variable->[IDX_KIND]";
+	$variable->[IDX_DATA] = run $value
 };
 
 # Executes the second argument whilst the first is true.
@@ -469,7 +474,7 @@ sub parse {
 	}
 
 	# Creates the function
-	{ kind => KIND_FUNC, func => $func, args => \@args }
+	[KIND_FUNC, $func, \@args]
 }
 
 ####################################################################################################
