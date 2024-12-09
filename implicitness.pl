@@ -6,34 +6,33 @@ no warnings 'recursion';
 
 # Types in this implementation are handled via hashes: The `kind` value is one
 # of the following constants, and the `data` value corresponds to the data of
-# that type. Only the `KIND_FUNC` functions differently---instead of a `data`
+# that type. Only the `FUNC_KIND` functions differently---instead of a `data`
 # field, it has both `func` and `args` fields.
 
 ####################################################################################################
 #                                          Value Creation                                          #
 ####################################################################################################
 
-use constant KIND_INT  => 0;
-use constant KIND_STR  => 1;
-use constant KIND_LIST => 2;
-use constant KIND_BOOL => 3;
-use constant KIND_NULL => 4;
-use constant KIND_VAR  => 5;
-use constant KIND_FUNC => 6;
-# use constant KIND_IDX => 6;
+use constant INT_KIND => 0;
+use constant STR_KIND => 1;
+use constant LIST_KIND => 2;
+use constant BOOL_KIND => 3;
+use constant NULL_KIND => 4;
+use constant VAR_KIND => 5;
+use constant FUNC_KIND => 6;
 
-our $NULL =  { kind => KIND_NULL, data => 0 };
-our $TRUE =  { kind => KIND_BOOL, data => 1 };
-our $FALSE = { kind => KIND_BOOL, data => 0 };
+our $NULL =  { kind => NULL_KIND, data => 0 };
+our $TRUE =  { kind => BOOL_KIND, data => 1 };
+our $FALSE = { kind => BOOL_KIND, data => 0 };
 
-sub new_int  { {kind => KIND_INT,  data => int shift} }
-sub new_str  { {kind => KIND_STR,  data => shift} }
-sub new_list { {kind => KIND_LIST, data => [@_]} }
+sub new_int  { {kind => INT_KIND,  data => int shift} }
+sub new_str  { {kind => STR_KIND,  data => shift} }
+sub new_list { {kind => LIST_KIND, data => [@_]} }
 sub new_bool { shift ? $TRUE : $FALSE }
 
 our %known_variables;
 sub lookup_variable {
-	$known_variables{$_[0]} ||= { kind => KIND_VAR, data => undef }
+	$known_variables{$_[0]} ||= { kind => VAR_KIND, data => undef }
 }
 
 ####################################################################################################
@@ -41,14 +40,14 @@ sub lookup_variable {
 ####################################################################################################
 
 # Returns the data and kind of its argument
-sub explode {
+sub explode(_) {
 	@{shift()}{'kind','data'}
 }
 
-sub run;
+sub run(_);
 sub run_if_needed {
-	my $value = shift;
-	KIND_VAR <= $value->{kind} ? run $value : $value;
+	$_ = shift;
+	VAR_KIND <= $_->{kind} ? run : $_;
 }
 
 ####################################################################################################
@@ -56,44 +55,48 @@ sub run_if_needed {
 ####################################################################################################
 
 # Converts its argument to an integer.
-sub to_int {
+sub to_int(_);
+sub to_int(_) {
 	my ($kind, $data) = explode run_if_needed shift;
 
-	$kind == KIND_LIST and return int @$data;
+	$kind == LIST_KIND and return int @$data;
 	# Normal perl string->int conversion doesn't follow the knight spec.
-	$kind == KIND_STR  and return ($data =~ /^\s*([-+]?\d+)/) ? $1 : 0;
+	$kind == STR_KIND  and return ($data =~ /^\s*([-+]?\d+)/) ? $1 : 0;
 
 	int $data
 }
 
 # Converts its argument to a string.
-sub to_str {
+sub to_str(_);
+sub to_str(_) {
 	my ($kind, $data) = explode run_if_needed shift;
 
-	$kind <= KIND_STR  and return $data;
-	$kind == KIND_LIST and return join "\n", map{to_str($_)} @$data;
-	$kind == KIND_NULL and return '';
+	$kind <= STR_KIND  and return $data;
+	$kind == LIST_KIND and return join "\n", map{to_str($_)} @$data;
+	$kind == NULL_KIND and return '';
 
 	$data ? 'true' : 'false'
 }
 
 # Converts its argument to a boolean.
-sub to_bool {
+sub to_bool(_);
+sub to_bool(_) {
 	my ($kind, $data) = explode run_if_needed shift;
 
-	$kind == KIND_STR  and return '' ne $data;
-	$kind == KIND_LIST and return scalar @$data;
+	$kind == STR_KIND  and return '' ne $data;
+	$kind == LIST_KIND and return scalar @$data;
 
 	$data
 }
 
 # Converts its argument to a list.
-sub to_list {
+sub to_list(_);
+sub to_list(_) {
 	my ($kind, $data) = explode run_if_needed shift;
 
-	$kind == KIND_LIST and return @$data;
-	$kind == KIND_STR  and return map {new_str $_} split(//, $data);
-	$kind == KIND_INT  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
+	$kind == LIST_KIND and return @$data;
+	$kind == STR_KIND  and return map {new_str $_} split(//, $data);
+	$kind == INT_KIND  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
 
 	$data ? $TRUE : ()
 }
@@ -103,14 +106,15 @@ sub to_list {
 ####################################################################################################
 
 # Gets a string representation of its argument.
-sub repr {
+sub repr(_);
+sub repr(_) {
 	my ($kind, $data) = explode shift;
 
-	$kind == KIND_INT  and return $data;
-	$kind == KIND_BOOL and return $data ? 'true' : 'false';
-	$kind == KIND_NULL and return 'null';
-	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
-	$kind != KIND_STR  and return '<other>';
+	$kind == INT_KIND  and return $data;
+	$kind == BOOL_KIND and return $data ? 'true' : 'false';
+	$kind == NULL_KIND and return 'null';
+	$kind == LIST_KIND and return '[' . join(', ', map {repr($_)} @$data) . ']';
+	$kind != STR_KIND  and return '<other>';
 
 	my $r = '"';
 	foreach (split //, $data) {
@@ -131,9 +135,9 @@ sub are_eql {
 	$lhs->{kind} != $rhs->{kind} and return 0; # Kinds aren't the same
 
 	my ($lkind, $ldata) = explode $lhs;
-	$lkind == KIND_INT  and return $ldata == $rhs->{data};
-	$lkind == KIND_STR  and return $ldata eq $rhs->{data};
-	$lkind != KIND_LIST and return 0; # All other kinds aren't equal
+	$lkind == INT_KIND  and return $ldata == $rhs->{data};
+	$lkind == STR_KIND  and return $ldata eq $rhs->{data};
+	$lkind != LIST_KIND and return 0; # All other kinds aren't equal
 
 	my @l = @$ldata;
 	my @r = @{$rhs->{data}};
@@ -147,10 +151,10 @@ sub compare {
 	my ($lhs, $rhs) = @_;
 	my ($lkind, $ldata) = explode $lhs;
 
-	$lkind == KIND_INT  and return $ldata <=> to_int $rhs;
-	$lkind == KIND_STR  and return $ldata cmp to_str $rhs;
-	$lkind == KIND_BOOL and return $ldata <=> !!to_bool $rhs;
-	$lkind != KIND_LIST and die "cannot compare $lkind";
+	$lkind == INT_KIND  and return $ldata <=> to_int $rhs;
+	$lkind == STR_KIND  and return $ldata cmp to_str $rhs;
+	$lkind == BOOL_KIND and return $ldata <=> !!to_bool $rhs;
+	$lkind != LIST_KIND and die "cannot compare $lkind";
 
 	my @lhs = @$ldata;
 	my @rhs = to_list $rhs;
@@ -167,12 +171,12 @@ sub compare {
 }
 
 # Executes its argument.
-sub run {
+sub run(_) {
 	my $value = shift;
 	my ($kind, $data) = explode $value;
 
-	$kind < KIND_VAR  and return $value;
-	$kind == KIND_VAR and return $data;
+	$kind < VAR_KIND  and return $value;
+	$kind == VAR_KIND and return $data;
 
 	# Manual tail-call recursion lmao
 	@_ = @{$value->{args}};
@@ -261,8 +265,8 @@ register 'O', 1, sub {
 # Returns either the `chr` or `ord` of its argument, depending on its type.
 register 'A', 1, sub {
 	my ($kind, $data) = explode run shift;
-	$kind == KIND_INT and return new_str chr $data;
-	$kind == KIND_STR and return new_int ord $data;
+	$kind == INT_KIND and return new_str chr $data;
+	$kind == STR_KIND and return new_int ord $data;
 	die "cannot ascii $kind";
 };
 
@@ -280,8 +284,8 @@ register ',', 1, sub {
 register '[', 1, sub {
 	my ($kind, $data) = explode run shift;
 
-	$kind == KIND_STR  and return new_str substr $data, 0, 1;
-	$kind == KIND_LIST and return $data->[0];
+	$kind == STR_KIND  and return new_str substr $data, 0, 1;
+	$kind == LIST_KIND and return $data->[0];
 
 	die "cannot get head of $kind"
 };
@@ -290,8 +294,8 @@ register '[', 1, sub {
 register ']', 1, sub {
 	my ($kind, $data) = explode run shift;
 
-	$kind == KIND_STR  and return new_str substr $data, 1;
-	$kind == KIND_LIST and return new_list @{$data}[1..$#$data];
+	$kind == STR_KIND  and return new_str substr $data, 1;
+	$kind == LIST_KIND and return new_list @{$data}[1..$#$data];
 
 	die "cannot get tail of $kind";
 };
@@ -300,9 +304,9 @@ register ']', 1, sub {
 register '+', 2, sub {
 	my ($kind, $data) = explode run shift;
 
-	$kind == KIND_INT  and return new_int $data + to_int shift;
-	$kind == KIND_STR  and return new_str $data . to_str shift;
-	$kind == KIND_LIST and return new_list @$data, to_list shift;
+	$kind == INT_KIND  and return new_int $data + to_int shift;
+	$kind == STR_KIND  and return new_str $data . to_str shift;
+	$kind == LIST_KIND and return new_list @$data, to_list shift;
 
 	die "cannot add $kind";
 };
@@ -317,9 +321,9 @@ register '*', 2, sub {
 	my ($kind, $data) = explode run shift;
 	my $amnt = to_int shift; # all 3 types use an integer for amount.
 
-	$kind == KIND_INT  and return new_int $data * $amnt;
-	$kind == KIND_STR  and return new_str $data x $amnt;
-	$kind != KIND_LIST and die "cannot multiply $kind";
+	$kind == INT_KIND  and return new_int $data * $amnt;
+	$kind == STR_KIND  and return new_str $data x $amnt;
+	$kind != LIST_KIND and die "cannot multiply $kind";
 
 	my @list;
 	@list = (@list, @$data) while $amnt--;
@@ -340,8 +344,8 @@ register '%', 2, sub {
 register '^', 2, sub {
 	my ($kind, $data) = explode run shift;
 
-	$kind == KIND_INT  and return new_int $data ** to_int shift;
-	$kind == KIND_LIST and return new_str join to_str(shift), map{to_str $_} @$data;
+	$kind == INT_KIND  and return new_int $data ** to_int shift;
+	$kind == LIST_KIND and return new_str join to_str(shift), map{to_str $_} @$data;
 
 	die "cannot exponentiate $kind";
 };
@@ -384,7 +388,7 @@ register ';', 2, sub {
 # Assigns the first argument to the second. The first must be a variable.
 register '=', 2, sub {
 	my ($variable, $value) = @_;
-	$variable->{kind} == KIND_VAR or die "can't assign to $variable->{kind}";
+	$variable->{kind} == VAR_KIND or die "can't assign to $variable->{kind}";
 	$variable->{data} = run $value
 };
 
@@ -398,7 +402,7 @@ register 'W', 2, sub {
 # Executes the second/third argument depending on the truthiness of the first.
 register 'I', 3, sub {
 	my ($cond, $iftrue, $iffalse) = @_;
-	run to_bool($cond) ? $iftrue : $iffalse
+	run(to_bool($cond) ? $iftrue : $iffalse)
 };
 
 # Gets a sublist/substring of the first argument with the given range.
@@ -407,8 +411,8 @@ register 'G', 3, sub {
 	my $idx = to_int shift;
 	my $len = to_int shift;
 
-	$kind == KIND_STR  and return new_str substr $data, $idx, $len;
-	$kind == KIND_LIST and return new_list @{$data}[$idx..$idx + $len - 1];
+	$kind == STR_KIND  and return new_str substr $data, $idx, $len;
+	$kind == LIST_KIND and return new_list @{$data}[$idx..$idx + $len - 1];
 
 	die "cannot get subcontainer of $kind";
 };
@@ -421,7 +425,7 @@ register 'S', 4, sub {
 	my $len = to_int shift;
 	my $repl = run shift;
 
-	if ($kind == KIND_STR) {
+	if ($kind == STR_KIND) {
 		return new_str(
 			substr($data, 0, $idx)
 			. to_str($repl)
@@ -429,7 +433,7 @@ register 'S', 4, sub {
 		);
 	}
 
-	if ($kind == KIND_LIST) {
+	if ($kind == LIST_KIND) {
 		return new_list(
 			@{$data}[0..$idx-1],
 			to_list($repl),
@@ -469,7 +473,7 @@ sub parse {
 	}
 
 	# Creates the function
-	{ kind => KIND_FUNC, func => $func, args => \@args }
+	{ kind => FUNC_KIND, func => $func, args => \@args }
 }
 
 ####################################################################################################
