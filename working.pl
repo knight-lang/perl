@@ -13,28 +13,27 @@ no warnings 'recursion';
 #                                          Value Creation                                          #
 ####################################################################################################
 
-use constant
-	KIND_INT  => 0,
-	KIND_STR  => 1,
-	KIND_LIST => 2,
-	KIND_BOOL => 3,
-	KIND_NULL => 4,
-	KIND_VAR  => 5,
-	KIND_FUNC => 6;
+use constant KIND_INT  => 0;
+use constant KIND_STR  => 1;
+use constant KIND_LIST => 2;
+use constant KIND_BOOL => 3;
+use constant KIND_NULL => 4;
+use constant KIND_VAR  => 5;
+use constant KIND_FUNC => 6;
 
-use constant
-	IDX_KIND => 0,
-	IDX_DATA => 1;
+use constant IDX_KIND => 0;
+use constant IDX_DATA => 1;
+use constant IDX_FUNC => 1;
+use constant IDX_ARGS => 2;
 
-use constant
-	NULL  => [KIND_NULL, 0],
-	TRUE  => [KIND_BOOL, 1],
-	FALSE => [KIND_BOOL, 0];
+our $NULL =  [KIND_NULL, 0];
+our $TRUE =  [KIND_BOOL, 1];
+our $FALSE = [KIND_BOOL, 0];
 
 sub new_int  { [KIND_INT,  int shift] }
 sub new_str  { [KIND_STR,  shift] }
 sub new_list { [KIND_LIST, [@_]] }
-sub new_bool { shift ? TRUE : FALSE }
+sub new_bool { shift ? $TRUE : $FALSE }
 
 our %known_variables;
 sub lookup_variable {
@@ -101,7 +100,7 @@ sub to_list {
 	$kind == KIND_STR  and return map {new_str $_} split(//, $data);
 	$kind == KIND_INT  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
 
-	$data ? TRUE : ()
+	$data ? $TRUE : ()
 }
 
 ####################################################################################################
@@ -196,7 +195,7 @@ sub register {
 # Reads a line from stdin.
 register 'P', 0, sub {
 	my $line = <STDIN>;
-	return NULL unless defined $line;
+	return $NULL unless defined $line;
 	$line =~ s/\r*\n?$//;
 	new_str $line
 };
@@ -259,7 +258,7 @@ register 'O', 1, sub {
 	$_ = to_str shift;
 	s/\\$// or $_ .= "\n";
 	print;
-	NULL
+	$NULL
 };
 
 # Returns either the `chr` or `ord` of its argument, depending on its type.
@@ -396,7 +395,7 @@ register '=', 2, sub {
 register 'W', 2, sub {
 	my ($cond, $body) = @_;
 	run $body while to_bool $cond;
-	NULL
+	$NULL
 };
 
 # Executes the second/third argument depending on the truthiness of the first.
@@ -459,7 +458,7 @@ sub parse {
 	s/^(["'])(.*?)\1//s   and return new_str $2;
 	s/^[a-z_][a-z0-9_]*// and return lookup_variable $&;
 	s/^([TF])[A-Z_]*//    and return new_bool $1 eq 'T';
-	s/^N[A-Z_]*//         and return NULL;
+	s/^N[A-Z_]*//         and return $NULL;
 	s/^@//                and return new_list;
 	s/^([A-Z_]+|.)//      or  return; # If we can't parse a function, return nothing.
 
