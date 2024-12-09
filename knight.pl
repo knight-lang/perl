@@ -125,16 +125,12 @@ sub repr {
 	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
 	$kind != KIND_STR  and return '<other>';
 
-	my $r = '"';
-	foreach (split //, $data) {
-		if ($_ eq "\r") { $r .= '\r'; next }
-		if ($_ eq "\n") { $r .= '\n'; next }
-		if ($_ eq "\t") { $r .= '\t'; next }
-		$r .= '\\' if $_ eq '\\' || $_ eq '"';
-		$r .= $_;
-	}
-
-	return $r . '"'
+	$_ = $data;
+	s/[\\"]/\\$&/g;
+	s/\r/\\r/g;
+	s/\n/\\n/g;
+	s/\t/\\t/g;
+	return qq/"$_"/;
 }
 
 # Sees if two values are equal. Essentially `==`/`eq` for values.

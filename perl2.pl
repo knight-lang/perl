@@ -1,6 +1,10 @@
 use constant foo => [1, 2];
 
-print foo == foo;
+$_ = "Abc";
+s/A/$&$&/;
+print;
+# print foo == foo;
+
 __END__
 $x = [1,2,3,];
 my ($a, *b) = @$x;
