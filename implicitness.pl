@@ -117,21 +117,19 @@ sub to_list {
 
 # Gets a string representation of its argument.
 sub repr {
-	my $kind;
+	my ($kind, $data) = @{shift()};
 
-	($kind, $_) = @{$_[0]};
-
-	$kind == KIND_INT  and return $_;
-	$kind == KIND_BOOL and return $_ ? 'true' : 'false';
+	$kind == KIND_INT  and return $data;
+	$kind == KIND_BOOL and return $data ? 'true' : 'false';
 	$kind == KIND_NULL and return 'null';
-	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$_) . ']';
+	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
 	$kind != KIND_STR  and return '<other>';
 
+	$_ = $data;
 	s/[\\"]/\\$&/g;
 	s/\r/\\r/g;
 	s/\n/\\n/g;
 	s/\t/\\t/g;
-
 	return qq/"$_"/;
 }
 
@@ -212,9 +210,9 @@ register 'R', 0, sub {
 };
 
 # Evaluates its argument as knight code.
-sub parse;
+sub play;
 register 'E', 1, sub {
-	run parse to_str shift
+	play to_str shift
 };
 
 # Simply returns the argument unchanged.
@@ -468,17 +466,23 @@ sub parse {
 	s/^@//                and return new_list;
 	s/^([A-Z_]+|.)//      or  return; # If we can't parse a function, return nothing.
 
+	# Get function name.
 	my $name = substr $&, 0, 1;
-	my ($arity, $func) = @{$functions{$name} or die "unknown character '$name'"};
+	my ($arity, $func) = @{$functions{$name} or die "unknown token start '$name'"};
 
 	# Parse Arguments
 	my @args;
-	for (my $i = 0; $i < $arity; $i++) {
-		push @args, (parse $_ or die "missing argument $i for function '$name'");
+	foreach my $i (1..$arity) {
+		push @args, parse($_) || die("missing argument $i for function '$name'");
 	}
 
 	# Creates the function
 	new_func $func, @args
+}
+
+sub play {
+	my $program = parse shift or die "no program given";
+	run $program
 }
 
 ####################################################################################################
@@ -491,9 +495,12 @@ my $expr;
 if ($flag eq '-e') {
 	$expr = shift;
 } elsif ($flag eq '-f') {
-	$expr = join '', <>;
+	$expr = join "\n", <>; # Notably not <STDIN>
 }
 
-die "usage: $0 (-e 'expr' | -f file)" unless defined($expr) && $#ARGV == -1;
+unless(defined($expr) && $#_ == -1) {
+	print STDERR "usage: $0 (-e 'expr' | -f file)";
+	exit 1;
+}
 
-run parse($expr) || die('nothing to parse?');
+play $expr;
