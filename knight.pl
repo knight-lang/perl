@@ -178,9 +178,9 @@ sub run {
 	goto $value->{func}
 }
 
-####################
-# Knight Functions #
-####################
+####################################################################################################
+#                                         Knight Functions                                         #
+####################################################################################################
 
 our %functions;
 sub register {
@@ -190,7 +190,7 @@ sub register {
 
 # Reads a line from stdin.
 register 'P', 0, sub {
-	my $line = <>;
+	my $line = <STDIN>;
 	return $NULL unless defined $line;
 	$line =~ s/\r*\n?$//;
 	new_str $line
@@ -439,6 +439,10 @@ register 'S', 4, sub {
 	die "cannot set subcontainer of $kind";
 };
 
+####################################################################################################
+#                                             Parsing                                              #
+####################################################################################################
+
 sub parse {
 	$_ = shift;
 
@@ -467,9 +471,9 @@ sub parse {
 	{ kind => FUNC_KIND, func => $func, args => \@args }
 }
 
-#################################
-# Command line argument parsing #
-#################################
+####################################################################################################
+#                                  Command-Line Argument Handling                                  #
+####################################################################################################
 
 my $flag = shift || "";
 
@@ -483,13 +487,3 @@ if ($flag eq '-e') {
 die "usage: $0 (-e 'expr' | -f file)" unless defined($expr) && $#ARGV == -1;
 
 run parse($expr) || die('nothing to parse?');
-
-# my $flag = shift @ARGV;
-
-# unless ($#ARGV == 0 && ($flag eq '-e' || $flag eq '-f')) {
-# 	die "usage: $0 (-e 'expr' | -f file)";
-# }
-
-# my $expr = parse($flag eq '-e' ? shift : join '', <>) or die 'nothing to parse?';
-# run $expr;
-
