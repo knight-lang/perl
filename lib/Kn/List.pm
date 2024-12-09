@@ -7,7 +7,7 @@ use parent 'Kn::Value';
 use overload
 	'bool' => sub { $#{shift()}; },
 	'0+' => sub { $#{shift()}; },
-	'""' => sub { join "\n", map{"$_"} shift(); }; # todo: can this just be `join "\n",shift`
+	'""' => sub { join "\n", @{shift()}; };
 
 # Creates a new `Value` (or whatever subclasses it) by simply getting a
 # reference to the second argument.
@@ -22,23 +22,39 @@ sub parse {
 	$class->new()
 }
 
-# Converts both arguments to a string and concatenates them.
 sub add {
 	Kn::List->new(@{shift()}, @{shift()});
 }
 
-# Duplicates the first argument by the second argument's amount.
 sub mul {
 	my @list = @{shift()};
 	my $amnt = int shift;
+
 	my @res;
-	@res = (@res, @list) while ($amnt--)
-	Kn::List->new(shift() x shift);
+	@res = (@res, @list) while $amnt--;
+	Kn::List->new(@res);
+}
+
+sub pow {
+	my @list = @{shift()};
+	my $sep = "" . shift;
+
+	Kn::String->new(join $sep, @list)
 }
 
 # Compares the two strings lexicographically.
 sub cmp {
-	"$_[0]" cmp "$_[1]"
+	my @lhs = @{shift()};
+	my @rhs = @{shift()};
+
+	my $minlen = $#lhs < $#rhs ? $#lhs : $#rhs;
+
+	my $cmp;
+	for (my $i = 0; $i <= $minlen; $i++) {
+		$cmp = $lhs[i].cmp($rhs[i]) and return $cmp;
+	}
+
+	$#lhs <=> $#rhs;
 }
 
 # Checks to see if two strings are equal. This differs from `Value`'s in that
@@ -46,7 +62,17 @@ sub cmp {
 sub eql {
 	my ($lhs, $rhs) = @_;
 
-	ref($lhs) eq ref($rhs) && $$lhs eq $$rhs
+	return unless ref($lhs) eq ref($rhs);
+	my @lhs = @$lhs;
+	my @rhs = @$rhs;
+
+	return unless $#lhs == $#rhs;
+	
+	for (my $i = 0; $i <= $#lhs; $i++) {
+		return unless $lhs[i].eql($rhs[i]);
+	}
+
+	1;
 }
 # Dumps the class's info. Used for debugging.
 sub dump {

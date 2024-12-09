@@ -74,7 +74,7 @@ __PACKAGE__->register('!', 1, sub {
 
 # Gets the length of the given argument as a string.
 __PACKAGE__->register('L', 1, sub {
-	Kn::Number->new(length shift);
+	Kn::Number->new(scalar @{shift()});
 });
 
 # Dumps a value's representation, then returns it.
@@ -82,7 +82,15 @@ __PACKAGE__->register('D', 1, sub {
 	my $val = shift->run();
 
 	print $val->dump();
-	return $val;
+	$val;
+});
+
+__PACKAGE__->register(',', 1, sub {
+	Kn::List->new(shift->run());
+});
+
+__PACKAGE__->register('[', 1, sub {
+	Kn::List->new(shift->run());
 });
 
 # Outputs the given argument, which it then returns. If the argument ends with

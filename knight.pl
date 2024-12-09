@@ -2,17 +2,17 @@
 
 use warnings;
 use strict;
-
-no warnings 'recursion'; # `run` has lots of recursion
+no warnings 'recursion';
 
 # Types in this implementation are handled via hashes: The `kind` value is one
 # of the following constants, and the `data` value corresponds to the data of
 # that type. Only the `FUNC_KIND` functions differently---instead of a `data`
 # field, it has both `func` and `args` fields.
 
-#####################################
-# Value representation and creation #
-#####################################
+##################
+# Value Creation #
+##################
+
 use constant INT_KIND => 0;
 use constant STR_KIND => 1;
 use constant LIST_KIND => 2;
@@ -56,6 +56,7 @@ sub run_if_needed {
 # Value Conversion #
 ####################
 
+# Converts its argument to an integer.
 sub to_int {
 	my ($kind, $data) = explode run_if_needed shift;
 
@@ -66,6 +67,7 @@ sub to_int {
 	($data =~ /^\s*([-+]?\d+)/) ? $1 : 0
 }
 
+# Converts its argument to a string.
 sub to_str {
 	my ($kind, $data) = explode run_if_needed shift;
 
@@ -75,6 +77,7 @@ sub to_str {
 	$data ? 'true' : 'false'
 }
 
+# Converts its argument to a boolean.
 sub to_bool {
 	my ($kind, $data) = explode run_if_needed shift;
 
@@ -83,6 +86,7 @@ sub to_bool {
 	$data
 }
 
+# Converts its argument to a list.
 sub to_list {
 	my ($kind, $data) = explode run_if_needed shift;
 
@@ -92,6 +96,11 @@ sub to_list {
 	map {new_int($data < 0 ? -$_ : $_)} split //, abs $data
 }
 
+############################
+# Interacting with values #
+############################
+
+# Gets a string representation of its argument.
 sub repr {
 	my ($kind, $data) = explode shift;
 
@@ -101,21 +110,20 @@ sub repr {
 	return '[' . join(', ', map {repr($_)} @$data) . ']' if $kind == LIST_KIND;
 	return "<other>" unless $kind == STR_KIND;
 
-	if ($kind == STR_KIND) {
-		my $r = '"';
-		foreach (split //, $data) {
-			if ($_ eq "\r") { $r .= '\r'; next }
-			if ($_ eq "\n") { $r .= '\n'; next }
-			if ($_ eq "\t") { $r .= '\t'; next }
-			$r .= '\\' if $_ eq '\\' || $_ eq '"';
-			$r .= $_;
-		}
-
-		return $r . '"'
+	my $r = '"';
+	foreach (split //, $data) {
+		if ($_ eq "\r") { $r .= '\r'; next }
+		if ($_ eq "\n") { $r .= '\n'; next }
+		if ($_ eq "\t") { $r .= '\t'; next }
+		$r .= '\\' if $_ eq '\\' || $_ eq '"';
+		$r .= $_;
 	}
+
+	return $r . '"'
 }
 
 
+# Sees if two values are equal. Essentially `==`/`eq` for values.
 sub are_eql {
 	my ($lhs, $rhs) = @_;
 	return 1 if $lhs == $rhs;
@@ -135,6 +143,7 @@ sub are_eql {
 	1
 }
 
+# Compares two values. Essentially `<=>`/`cmp` for values.
 sub compare {
 	my ($lhs, $rhs) = @_;
 	my ($lkind, $ldata) = explode $lhs;
@@ -158,7 +167,10 @@ sub compare {
 	$#lhs <=> $#rhs
 }
 
+# Executes its argument.
 sub run {
+	no warnings 'recursion'; # `run` has lots of recursion
+
 	my $value = shift;
 	my ($kind, $data) = explode $value;
 
@@ -168,12 +180,17 @@ sub run {
 	$value->{func}->(@{$value->{args}})
 }
 
+####################
+# Knight Functions #
+####################
+
 our %functions;
 sub register {
 	my ($name, $arity, $sub) = @_;
 	$functions{$name} = [$arity, $sub];
 }
 
+# Reads a line from stdin.
 register 'P', 0, sub {
 	my $line = <>;
 	return $NULL unless defined $line;
@@ -181,49 +198,60 @@ register 'P', 0, sub {
 	new_str $line
 };
 
+# Gets a random integer from 0-0xffffffff
 register 'R', 0, sub {
 	new_int int rand 0xffff_ffff
 };
 
+# Evaluates its argument as knight code.
 sub parse;
 register 'E', 1, sub {
 	run parse to_str shift
 };
 
+# Simply returns the argument unchanged.
 register 'B', 1, sub {
 	shift
 };
 
+# Calls a `B`'s return value.
 register 'C', 1, sub {
 	run run shift
 };
 
-register '`', 1, sub {
-	my $str = to_str shift; new_str scalar `$str`
+# Executes its argument as a shell command, and returns it.
+register '$', 1, sub {
+	my $str = to_str shift;
+	new_str scalar `$str`
 };
 
+# Stops the interpreter with the given exit code.
 register 'Q', 1, sub {
 	exit to_int shift
 };
 
-
+# Logically negates its argument.
 register '!', 1, sub {
 	new_bool !to_bool shift
 };
 
+# The length negates its argument.
 register 'L', 1, sub {
-	# We cant make this one because if `to_list` returns a single element, it
-	# won't return 1 from `scalar`, but rather the element's pointer..
+	# We cant make this one-line because if `to_list` returns a single element,
+	# it won't return 1 from `scalar`, but rather the element's pointer..
 	my @list = to_list shift;
 	new_int scalar @list
 };
 
+# Writes a debugging representation to stdout and then returns it.
 register 'D', 1, sub {
 	my $value = run shift;
 	print repr $value;
 	$value
 };
 
+# Writes the argument to stdout. If it ends with `\`, that's stripped,
+# otherwise, it prints a newline.
 register 'O', 1, sub {
 	$_ = to_str shift;
 	s/\\$// or $_ .= "\n";
@@ -231,6 +259,7 @@ register 'O', 1, sub {
 	$NULL
 };
 
+# Returns either the `chr` or `ord` of its argument, depending on its type.
 register 'A', 1, sub {
 	my ($kind, $data) = explode run shift;
 	return new_str chr $data if $kind == INT_KIND;
@@ -238,14 +267,17 @@ register 'A', 1, sub {
 	die "cannot ascii $kind";
 };
 
+# Logically negates its argument.
 register '~', 1, sub {
 	new_int -to_int shift
 };
 
+# Returns a list of just its argument.
 register ',', 1, sub {
 	new_list run shift
 };
 
+# Gets the first element/character of its argument.
 register '[', 1, sub {
 	my ($kind, $data) = explode run shift;
 
@@ -255,6 +287,7 @@ register '[', 1, sub {
 	die "cannot get head of $kind"
 };
 
+# Gets everything _but_ first element/character of its argument.
 register ']', 1, sub {
 	my ($kind, $data) = explode run shift;
 
@@ -264,6 +297,7 @@ register ']', 1, sub {
 	die "cannot get tail of $kind";
 };
 
+# Adds/concatenates its arguments together.
 register '+', 2, sub {
 	my ($kind, $data) = explode run shift;
 
@@ -274,13 +308,15 @@ register '+', 2, sub {
 	die "cannot add $kind";
 };
 
+# Subtracts the second argument from the first.
 register '-', 2, sub {
 	new_int to_int(shift) - to_int(shift)
 };
 
+# Multiplies/repeats its first argument with/by the second.
 register '*', 2, sub {
 	my ($kind, $data) = explode run shift;
-	my $amnt = to_int shift;
+	my $amnt = to_int shift; # all 3 types use an integer for amount.
 
 	return new_int $data * $amnt if $kind == INT_KIND;
 	return new_str $data x $amnt if $kind == STR_KIND;
@@ -291,14 +327,17 @@ register '*', 2, sub {
 	return new_list @list;
 };
 
+# Divides the first argument by the second. Second cannot be zero.
 register '/', 2, sub {
 	new_int to_int(shift) / (to_int(shift) or die "cannot divide by zero")
 };
 
+# Modulos the first argument by the second. Second cannot be zero.
 register '%', 2, sub {
 	new_int to_int(shift) % (to_int(shift) or die "cannot modulo by zero")
 };
 
+# Exponentiates integers or `join`s a list by a string.
 register '^', 2, sub {
 	my ($kind, $data) = explode run shift;
 
@@ -308,52 +347,64 @@ register '^', 2, sub {
 	die "cannot exponentiate $kind";
 };
 
+# Sees if the first argument is smaller than the second.
 register '<', 2, sub {
 	new_bool(0 > compare run(shift), run(shift))
 };
 
+# Sees if the first argument is larger than the second.
 register '>', 2, sub {
 	new_bool(0 < compare run(shift), run(shift))
 };
 
+# Sees if two arguments are equal.
 register '?', 2, sub {
 	new_bool are_eql run(shift), run(shift)
 };
 
+# If the executed first argument is falsey, it's returned. Otherwise the second
+# executed and returned.
 register '&', 2, sub {
 	my $value = run shift;
 	return $value unless to_bool $value;
 	run shift;
 };
 
+# If the executed first argument is truthy, it's returned. Otherwise the second
+# executed and returned.
 register '|', 2, sub {
 	my $value = run shift;
 	return $value if to_bool $value;
 	run shift
 };
 
+# Executes the first argument and then executes and returns the second.
 register ';', 2, sub {
 	run shift;
 	run shift
 };
 
+# Assigns the first argument to the second. The first must be a variable.
 register '=', 2, sub {
 	my ($variable, $value) = @_;
-	die "cannot assign to $variable->{kind}" unless $variable->{kind} == VAR_KIND;
+	die "can't assign to $variable->{kind}" unless $variable->{kind} == VAR_KIND;
 	$variable->{data} = run $value
 };
 
+# Executes the second argument whilst the first is true.
 register 'W', 2, sub {
 	my ($cond, $body) = @_;
 	run $body while to_bool $cond;
 	$NULL
 };
 
+# Executes the second/third argument depending on the truthiness of the first.
 register 'I', 3, sub {
 	my ($cond, $iftrue, $iffalse) = @_;
 	run(to_bool($cond) ? $iftrue : $iffalse)
 };
 
+# Gets a sublist/substring of the first argument with the given range.
 register 'G', 3, sub {
 	my ($kind, $data) = explode run shift;
 	my $idx = to_int shift;
@@ -365,6 +416,8 @@ register 'G', 3, sub {
 	die "cannot get subcontainer of $kind";
 };
 
+# Replaces a new sublist/substring where the first argument's range is replaced
+# with the fourth argument.
 register 'S', 4, sub {
 	my ($kind, $data) = explode run shift;
 	my $idx = to_int shift;
@@ -400,14 +453,14 @@ sub parse {
 	s/^\d+// and return new_int $&;
 	s/^(["'])(.*?)\1//s and return new_str $2;
 	s/^[a-z_][a-z0-9_]*// and return lookup_variable $&;
-	s/^([TF])[A-Z_]*// and return new_bool($1 eq 'T');
+	s/^([TF])[A-Z_]*// and return new_bool $1 eq 'T';
 	s/^N[A-Z_]*// and return $NULL;
 	s/^@// and return new_list;
 
 	# If we can't parse a function, return nothing.
 	s/^([A-Z_]+|.)// or return;
 	my $name = substr $&, 0, 1;
-	my ($arity, $func) = @{$functions{$name} or die "unknown token start '$name'"};
+	my ($arity, $func) = @{$functions{$name} or die "unknown character '$name'"};
 
 	# Parse Arguments
 	my @args;
@@ -415,14 +468,33 @@ sub parse {
 		push @args, (parse $_ or die "missing argument $i for function '$name'");
 	}
 
-	# Create the function
+	# Creates the function
 	{ kind => FUNC_KIND, func => $func, args => \@args }
 }
 
-my $flag = shift @ARGV;
-unless ($#ARGV == 0 && ($flag eq '-e' || $flag eq '-f')) {
-	die "usage: $0 (-e 'expr' | -f file)"
+#################################
+# Command line argument parsing #
+#################################
+
+my $flag = shift || "";
+
+my $expr;
+if ($flag eq '-e') {
+	$expr = shift;
+} elsif ($flag eq '-f') {
+	$expr = join '', <>;
 }
 
-my $expr = parse($flag eq '-e' ? shift : join '', <>) or die 'nothing to parse?';
-run $expr;
+die "usage: $0 (-e 'expr' | -f file)" unless defined($expr) && $#ARGV == -1;
+
+run parse($expr) || die('nothing to parse?');
+
+# my $flag = shift @ARGV;
+
+# unless ($#ARGV == 0 && ($flag eq '-e' || $flag eq '-f')) {
+# 	die "usage: $0 (-e 'expr' | -f file)";
+# }
+
+# my $expr = parse($flag eq '-e' ? shift : join '', <>) or die 'nothing to parse?';
+# run $expr;
+
