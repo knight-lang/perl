@@ -1,3 +1,23 @@
+my $a = 3, $b;
+print $a;
+__END__
+sub mypush (+@) {
+    my $aref = shift;
+    die "Not an array or arrayref" unless ref $aref eq 'ARRAY';
+    push @$aref, @_;
+}
+
+mypush (1, 2), 2;
+exit;
+
+sub foo(&$$) { 1 }
+
+sub bar($$&) { 1 }
+
+foo { 3 } 1, 2;
+bar 1, 2, sub { 3 };
+
+__END__
 # use Benchmark qw/cmpthese/;
 # use constant INT_TYPE1 => 0;
 # use constant STR_TYPE1 => 1;

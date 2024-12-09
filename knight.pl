@@ -132,7 +132,7 @@ sub repr {
 # Sees if two values are equal. Essentially `==`/`eq` for values.
 sub are_eql {
 	my ($lhs, $rhs) = @_;
-	$lhs == $rhs                 and return 1; # Exact same object
+	$lhs == $rhs                         and return 1; # Exact same object
 	$lhs->[IDX_KIND] != $rhs->[IDX_KIND] and return 0; # Kinds aren't the same
 
 	my ($lkind, $ldata) = explode $lhs;
@@ -174,14 +174,12 @@ sub compare {
 # Executes its argument.
 sub run {
 	my $value = shift;
-	my ($kind, $data) = explode $value;
-
-	$kind < KIND_VAR  and return $value;
-	$kind == KIND_VAR and return $data;
+	$value->[IDX_KIND] < KIND_VAR  and return $value;
+	$value->[IDX_KIND] == KIND_VAR and return $value->[IDX_DATA];
 
 	# Manual tail-call recursion lmao
-	@_ = @{$value->[IDX_ARGS]};
-	goto $value->[IDX_FUNC]
+	@_ = @$value; shift;
+	goto shift;
 }
 
 ####################################################################################################
@@ -474,7 +472,7 @@ sub parse {
 	}
 
 	# Creates the function
-	[KIND_FUNC, $func, \@args]
+	[KIND_FUNC, $func, @args]
 }
 
 ####################################################################################################
