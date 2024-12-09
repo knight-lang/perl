@@ -1,5 +1,11 @@
-my $a = 3, $b;
-print $a;
+use constant foo => [1, 2];
+
+print foo == foo;
+__END__
+$x = [1,2,3,];
+my ($a, *b) = @$x;
+# my $a = 3, $b;
+# print $a;
 __END__
 sub mypush (+@) {
     my $aref = shift;

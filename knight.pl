@@ -13,33 +13,40 @@ no warnings 'recursion';
 #                                          Value Creation                                          #
 ####################################################################################################
 
-use constant
+# Constants for value representation.
+use constant {
 	KIND_INT  => 0,
 	KIND_STR  => 1,
 	KIND_LIST => 2,
 	KIND_BOOL => 3,
 	KIND_NULL => 4,
 	KIND_VAR  => 5,
-	KIND_FUNC => 6;
+	KIND_FUNC => 6,
+};
 
-use constant
+# Constants for indexing into values.
+use constant {
 	IDX_KIND => 0,
-	IDX_DATA => 1;
+	IDX_DATA => 1,
+};
 
-use constant
-	NULL  => [KIND_NULL, 0],
-	TRUE  => [KIND_BOOL, 1],
-	FALSE => [KIND_BOOL, 0];
+# Knight constants
+use constant {
+	KN_NULL  => [KIND_NULL, 0],
+	KN_TRUE  => [KIND_BOOL, 1],
+	KN_FALSE => [KIND_BOOL, 0],
+};
 
+# The list of all variables.
+our %variables;
+
+# Creation functions
 sub new_int  { [KIND_INT,  int shift] }
 sub new_str  { [KIND_STR,  shift] }
 sub new_list { [KIND_LIST, [@_]] }
-sub new_bool { shift ? TRUE : FALSE }
-
-our %known_variables;
-sub lookup_variable {
-	$known_variables{$_[0]} ||= [KIND_VAR, undef]
-}
+sub new_bool { shift ? KN_TRUE : KN_FALSE }
+sub new_var  { $variables{shift()} ||= [KIND_VAR, undef] }
+sub new_func { [KIND_FUNC, @_] }
 
 ####################################################################################################
 #                                            Utilities                                             #
@@ -62,7 +69,7 @@ sub run_if_needed {
 
 # Converts its argument to an integer.
 sub to_int {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_LIST and return int @$data;
 	# Normal perl string->int conversion doesn't follow the knight spec.
@@ -74,7 +81,7 @@ sub to_int {
 
 # Converts its argument to a string.
 sub to_str {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind <= KIND_STR  and return $data;
 	$kind == KIND_LIST and return join "\n", map{to_str($_)} @$data;
@@ -85,7 +92,7 @@ sub to_str {
 
 # Converts its argument to a boolean.
 sub to_bool {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_STR  and return '' ne $data;
 	$kind == KIND_LIST and return scalar @$data;
@@ -95,13 +102,13 @@ sub to_bool {
 
 # Converts its argument to a list.
 sub to_list {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_LIST and return @$data;
 	$kind == KIND_STR  and return map {new_str $_} split(//, $data);
 	$kind == KIND_INT  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
 
-	$data ? TRUE : ()
+	$data ? KN_TRUE : ()
 }
 
 ####################################################################################################
@@ -110,7 +117,7 @@ sub to_list {
 
 # Gets a string representation of its argument.
 sub repr {
-	my ($kind, $data) = explode shift;
+	my ($kind, $data) = @{shift()};
 
 	$kind == KIND_INT  and return $data;
 	$kind == KIND_BOOL and return $data ? 'true' : 'false';
@@ -196,7 +203,7 @@ sub register {
 # Reads a line from stdin.
 register 'P', 0, sub {
 	my $line = <STDIN>;
-	return NULL unless defined $line;
+	return KN_NULL unless defined $line;
 	$line =~ s/\r*\n?$//;
 	new_str $line
 };
@@ -259,7 +266,7 @@ register 'O', 1, sub {
 	$_ = to_str shift;
 	s/\\$// or $_ .= "\n";
 	print;
-	NULL
+	KN_NULL
 };
 
 # Returns either the `chr` or `ord` of its argument, depending on its type.
@@ -396,7 +403,7 @@ register '=', 2, sub {
 register 'W', 2, sub {
 	my ($cond, $body) = @_;
 	run $body while to_bool $cond;
-	NULL
+	KN_NULL
 };
 
 # Executes the second/third argument depending on the truthiness of the first.
@@ -457,9 +464,9 @@ sub parse {
 	# Parse non-functions with the simple regex.
 	s/^\d+//              and return new_int $&;
 	s/^(["'])(.*?)\1//s   and return new_str $2;
-	s/^[a-z_][a-z0-9_]*// and return lookup_variable $&;
+	s/^[a-z_][a-z0-9_]*// and return new_var $&;
 	s/^([TF])[A-Z_]*//    and return new_bool $1 eq 'T';
-	s/^N[A-Z_]*//         and return NULL;
+	s/^N[A-Z_]*//         and return KN_NULL;
 	s/^@//                and return new_list;
 	s/^([A-Z_]+|.)//      or  return; # If we can't parse a function, return nothing.
 
@@ -473,7 +480,7 @@ sub parse {
 	}
 
 	# Creates the function
-	[KIND_FUNC, $func, @args]
+	new_func $func, @args
 }
 
 ####################################################################################################
