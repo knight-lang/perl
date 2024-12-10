@@ -21,7 +21,7 @@ sub new {
 sub parse {
 	my ($class, $stream) = @_;
 	$$stream =~ s/\A@//s or return;
-	$class->new()
+	$class->new
 }
 
 sub add {
@@ -95,7 +95,7 @@ sub dump {
 	my @list = @{shift()};
 	my $dump = '[';
 
-	'[' . join(', ', map{$_->dump()} @list) . ']'
+	'[' . join(', ', map{$_->dump} @list) . ']'
 }
 
 sub get {

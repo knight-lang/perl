@@ -4,10 +4,10 @@ use warnings;
 no warnings 'recursion';
 
 use overload
-	'""' => sub { ${shift->run()} },
-	'bool' => sub { ${shift->run()} }, # this is redundant really.
-	'0+' => sub { ${shift->run()} },
-	'@{}' => sub { @{shift->run()} };
+	'""'   => sub { ${shift->run} },
+	'bool' => sub { ${shift->run} }, # this is redundant really.
+	'0+'   => sub { ${shift->run} },
+	'@{}'  => sub { @{shift->run} };
 
 # Creates a new `Value` (or whatever subclasses it) by simply getting a
 # reference to the second argument.

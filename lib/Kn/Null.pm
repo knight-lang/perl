@@ -25,7 +25,7 @@ sub parse {
 
 	$$stream =~ s/\AN[A-Z]*//p or return;
 
-	$class->new();
+	$class->new;
 }
 
 # You are not allowed to compare null.

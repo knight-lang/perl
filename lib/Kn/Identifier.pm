@@ -20,7 +20,7 @@ sub parse {
 }
 
 sub list {
-	shift->run()->list();
+	shift->run->list;
 }
 
 # Run this argument by fetching its value from the environment.

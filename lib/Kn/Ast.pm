@@ -23,7 +23,7 @@ sub new {
 }
 
 sub list {
-	shift->run()->list();
+	shift->run->list;
 }
 
 # An Ast is only equivalent to itself.
@@ -47,7 +47,7 @@ sub parse {
 	my $func = Kn::Function->get($op) or die "unknown function '$op'";
 
 	my $ret = $class->new($func, $op,
-		map { Kn::Value->parse($stream) } (1..$func->arity())
+		map { Kn::Value->parse($stream) } (1..$func->arity)
 	);
 	$ret
 }
@@ -58,7 +58,7 @@ sub dump {
 	my $ret = "Function($this->{op}";
 
 	for my $x(@{$this->{args}}) {
-		$ret .= ', ' . $x->dump();
+		$ret .= ', ' . $x->dump;
 	};
 
 	"$ret)";

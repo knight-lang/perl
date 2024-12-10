@@ -3,6 +3,8 @@ A Perl implementation of Knight 2.0.1
 
 See [the main page](https://github.com/knight-lang/knight-lang) for more details.
 
+## TODO: ./knight -e 'D ; = v 123 +@ B v'
+
 # Running
 This requires a minimum of Perl v5.34. It might work on versions below v5.34, but I haven't tested them. You can execute it via `./knight -e 'OUTPUT "Hello, world"'`
 

@@ -34,7 +34,7 @@ sub run {
 
 # Gets a single line from stdin.
 __PACKAGE__->register('P', 0, sub {
-	$_ = scalar <STDIN> or return Kn::Null->new();
+	$_ = scalar <STDIN> or return Kn::Null->new;
 	s/\r*\n?$//;
 	Kn::String->new($_);
 });
@@ -56,7 +56,7 @@ __PACKAGE__->register('B', 1, sub {
 
 # Runs a previously unevaluated block of code.
 __PACKAGE__->register('C', 1, sub {
-	shift->run()->run();
+	shift->run->run;
 });
 
 # Executes the argument as a shell command, then returns the entire stdout.
@@ -76,35 +76,35 @@ __PACKAGE__->register('!', 1, sub {
 
 # Gets the length of the given argument as a string.
 __PACKAGE__->register('L', 1, sub {
-	my $sh = shift->run();
+	my $sh = shift->run;
 	Kn::Number->new(scalar @{$sh});
 });
 
 # Dumps a value's representation, then returns it.
 __PACKAGE__->register('D', 1, sub {
-	my $val = shift->run();
+	my $val = shift->run;
 
-	print $val->dump();
+	print $val->dump;
 	$val;
 });
 
 __PACKAGE__->register(',', 1, sub {
-	Kn::List->new(shift->run());
+	Kn::List->new(shift->run);
 });
 
 __PACKAGE__->register('[', 1, sub {
-	shift->run()->head();
+	shift->run->head;
 });
 
 __PACKAGE__->register(']', 1, sub {
-	shift->run()->tail();
+	shift->run->tail;
 });
 
 # Outputs the given argument, which it then returns. If the argument ends with
 # a `\`, it's removed and no trailing newline is printed. Otherwise, a newline
 # is added to the end of the string.
 __PACKAGE__->register('O', 1, sub {
-	my $val = shift->run();
+	my $val = shift->run;
 	my $str = "$val";
 
 	print(substr($str, -1) eq '\\' ? substr($str, 0, -1) : "$str\n");
@@ -113,69 +113,69 @@ __PACKAGE__->register('O', 1, sub {
 
 # Adds two values together.
 __PACKAGE__->register('A', 1, sub {
-	shift->run()->ascii();
+	shift->run->ascii;
 });
 
 # Negates the argument
 __PACKAGE__->register('~', 1, sub {
-	Kn::Number->new(-int shift->run());
+	Kn::Number->new(-int shift->run);
 });
 
 # Adds two values together.
 __PACKAGE__->register('+', 2, sub {
-	shift->run()->add(shift->run());
+	shift->run->add(shift->run);
 });
 
 # Subtracts the second vaule from the first
 __PACKAGE__->register('-', 2, sub {
-	shift->run()->sub(shift->run());
+	shift->run->sub(shift->run);
 });
 
 # Multiplies two values together.
 __PACKAGE__->register('*', 2, sub {
-	shift->run()->mul(shift->run());
+	shift->run->mul(shift->run);
 });
 
 # Divides the first number by the second.
 __PACKAGE__->register('/', 2, sub {
-	shift->run()->div(shift->run());
+	shift->run->div(shift->run);
 });
 
 # Gets the modulo of the first number by the second.
 __PACKAGE__->register('%', 2, sub {
-	shift->run()->mod(shift->run());
+	shift->run->mod(shift->run);
 });
 
 # Raises the first argument to the power of the second.
 __PACKAGE__->register('^', 2, sub {
-	shift->run()->pow(shift->run());
+	shift->run->pow(shift->run);
 });
 
 # Checks to see if two values are equal.
 __PACKAGE__->register('?', 2, sub {
-	Kn::Boolean->new(shift->run()->eql(shift->run()));
+	Kn::Boolean->new(shift->run->eql(shift->run));
 });
 
 # Checks to see if the first value is less than the second
 __PACKAGE__->register('<', 2, sub {
-	Kn::Boolean->new(shift->run()->lth(shift->run()));
+	Kn::Boolean->new(shift->run->lth(shift->run));
 });
 
 # Checks to see if the first value is greater than the second
 __PACKAGE__->register('>', 2, sub {
-	Kn::Boolean->new(shift->run()->gth(shift->run()));
+	Kn::Boolean->new(shift->run->gth(shift->run));
 });
 
 # Simply executes the first argument, then executes and returns second.
 __PACKAGE__->register(';', 2, sub {
-	shift->run();
-	shift->run();
+	shift->run;
+	shift->run;
 });
 
 # Assigns the second argument to the first. If the first argument is not
 # an identifier, it is first evaluated and then converted to a string.
 __PACKAGE__->register('=', 2, sub {
-	Kn::Environment->set(${shift()}, shift->run());
+	Kn::Environment->set(${shift()}, shift->run);
 });
 
 # Executes the second argument while the first one evaluates to true. Returns
@@ -184,40 +184,40 @@ __PACKAGE__->register('W', 2, sub {
 	my ($cond, $body) = @_;
 	my $ret;
 
-	$ret = $body->run() while $cond;
-	defined($ret) ? $ret : Kn::Null->new();
+	$ret = $body->run while $cond;
+	defined($ret) ? $ret : Kn::Null->new;
 });
 
 # If the first argument is falsey, it's returned. Otherwise, the second argument
 # is executed and returned.
 __PACKAGE__->register('&', 2, sub {
-	my $lhs = shift->run();
-	$lhs ? shift->run() : $lhs
+	my $lhs = shift->run;
+	$lhs ? shift->run : $lhs
 });
 
 # If the first argument is truthy, it's returned. Otherwise, the second argument
 # is executed and returned.
 __PACKAGE__->register('|', 2, sub {
-	my $lhs = shift->run();
-	$lhs ? $lhs : shift->run()
+	my $lhs = shift->run;
+	$lhs ? $lhs : shift->run
 });
 
 # If the first argument is true, evaluates and runs the second argument.
 # otherwise, evaluates and runs the third.
 __PACKAGE__->register('I', 3, sub {
-	$_[$_[0] ? 1 : 2]->run()
+	$_[$_[0] ? 1 : 2]->run
 });
 
 # Gets a substring of the first argument, starting at the second argument,
 # with a length of the third argument.
 __PACKAGE__->register('G', 3, sub {
-	shift->run()->get(@_);
+	shift->run->get(@_);
 });
 
 # Returns a new string where the first argument's substring starting at the 
 # second argument with length the third argument is replaced with the fourth.
 __PACKAGE__->register('S', 4, sub {
-	shift->run()->set(@_);
+	shift->run->set(@_);
 });
 
 1;
