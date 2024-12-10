@@ -352,7 +352,7 @@ register '^', 2, sub {
 	my ($kind, $data) = @{run shift};
 
 	$kind == KIND_INT  and return new_int $data ** to_int shift;
-	$kind == KIND_LIST and return new_str join to_str(shift), map{to_str $_} @$data;
+	$kind == KIND_LIST and return new_str join to_str(shift), map { to_str $_ } @$data;
 
 	die "cannot exponentiate $kind";
 };
@@ -432,21 +432,15 @@ register 'S', 4, sub {
 	my $len = to_int shift;
 	my $repl = run shift;
 
-	if ($kind == KIND_STR) {
-		return new_str(
-			substr($data, 0, $idx)
-			. to_str($repl)
-			. substr($data, $idx + $len)
-		);
-	}
+	$kind == KIND_STR and return new_str(
+		substr($data, 0, $idx) . to_str($repl) . substr($data, $idx + $len)
+	);
 
-	if ($kind == KIND_LIST) {
-		return new_list(
-			@{$data}[0..$idx-1],
-			to_list($repl),
-			@{$data}[$idx + $len..$#$data]
-		);
-	}
+	$kind == KIND_LIST and return new_list(
+		@{$data}[0..$idx-1],
+		to_list($repl),
+		@{$data}[$idx + $len..$#$data]
+	);
 
 	die "cannot set subcontainer of $kind";
 };
@@ -501,10 +495,10 @@ my $expr;
 if ($flag eq '-e') {
 	$expr = shift;
 } elsif ($flag eq '-f') {
-	$expr = join "\n", <>; # Notably not <STDIN>
+	$expr = join "", <>; # Notably not <STDIN>
 }
 
-unless(defined($expr) && $#_ == -1) {
+unless(defined($expr) && $#ARGV == -1) {
 	print STDERR "usage: $0 (-e 'expr' | -f file)";
 	exit 1;
 }
