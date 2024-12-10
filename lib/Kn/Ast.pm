@@ -1,8 +1,8 @@
 package Kn::Ast;
-
 use strict;
 use warnings;
 no warnings 'recursion';
+
 use parent 'Kn::Value';
 
 use Kn::Function;

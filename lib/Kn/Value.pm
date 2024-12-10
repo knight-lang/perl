@@ -34,9 +34,7 @@ sub mul {
 # Divides the first number by the second, `die`ing if the second's zero.
 sub div {
 	my $lhs = int shift;
-	my $rhs = int shift;
-
-	die "cant divide by zero" unless $rhs;
+	my $rhs = int shift or die 'cant divide by zero';
 
 	Kn::Number->new(int($lhs / $rhs));
 }
@@ -44,9 +42,7 @@ sub div {
 # Modulo the first number by the second, `die`ing if the second's zero.
 sub mod {
 	my $lhs = int shift;
-	my $rhs = int shift;
-
-	die "cant modulo by zero" unless $rhs;
+	my $rhs = int shift or die 'cant modulo by zero';
 
 	Kn::Number->new($lhs % $rhs);
 }
@@ -103,11 +99,10 @@ sub parse {
 	my $stream = $_[1];
 	my $ret;
 
-	while ($$stream =~ s/\A(?:[\s():]+|#[^\n]*)//) {
-		# do nothing, we're stripping the steram.
-	}
+	# Strip prefix
+	$$stream =~ s/\A(?:[\s():]+|#[^\n]*)*//;
 
-	for (qw(Kn::Number Kn::Identifier Kn::Null Kn::String Kn::Boolean Kn::Ast Kn::List)){
+	foreach (qw/Kn::Number Kn::Identifier Kn::Null Kn::String Kn::Boolean Kn::Ast Kn::List/) {
 		$ret = $_->parse($stream);
 		return $ret if defined $ret;
 	}
