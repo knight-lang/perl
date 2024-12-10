@@ -11,10 +11,6 @@
 #                                             Prelude                                              #
 ####################################################################################################
 
-# My perl is 5.34; This script doesn't do anything fancy, and can probably run on earlier ones,
-# but I haven't actually tested them out.
-use v5.34;
-
 # Enable warnings and strict mode. We disable `recursion` as we do a lot of recursion in Knight.
 use warnings;
 use strict;
