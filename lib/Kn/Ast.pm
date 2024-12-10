@@ -3,14 +3,13 @@ package Kn::Ast;
 use strict;
 use warnings;
 no warnings 'recursion';
-
 use parent 'Kn::Value';
 
 use Kn::Function;
 
 use overload
-	'0+' => 'run',
-	'""' => 'run',
+	'0+'   => 'run',
+	'""'   => 'run',
 	'bool' => 'run';
 
 # Creates a new `Ast` with the given function, operator name, and arguments.
@@ -20,10 +19,6 @@ sub new {
 	my ($class, $func, $op, @args) = @_;
 
 	bless { func => $func, op => $op, args => \@args }, $class;
-}
-
-sub list {
-	shift->run->list;
 }
 
 # An Ast is only equivalent to itself.

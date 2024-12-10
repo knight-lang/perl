@@ -5,7 +5,7 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'""' => sub { shift() ? 'true' : 'false'; },
+	'""'  => sub { shift() ? 'true' : 'false'; },
 	'@{}' => sub { my @l; push @l, shift if ($_[0]); \@l };
 
 # Parses a new boolean.

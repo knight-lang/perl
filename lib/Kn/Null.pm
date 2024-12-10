@@ -6,8 +6,8 @@ use parent 'Kn::Value';
 
 my @empty;
 use overload
-	'0+' => sub { 0 },
-	'""' => sub { '' },
+	'0+'  => sub { 0 },
+	'""'  => sub { '' },
 	'@{}' => sub { \@empty };
 
 my $null = 0;

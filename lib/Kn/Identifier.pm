@@ -19,10 +19,6 @@ sub parse {
 	$class->new(${^MATCH});
 }
 
-sub list {
-	shift->run->list;
-}
-
 # Run this argument by fetching its value from the environment.
 sub run {
 	Kn::Environment->get(${shift()});

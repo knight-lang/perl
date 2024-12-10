@@ -7,9 +7,9 @@ use parent 'Kn::Value';
 
 use overload
 	'bool' => sub { $#{shift()} >= 0; },
-	'0+' => sub { 1 + $#{shift()}; },
-	'""' => sub { join "\n", @{shift()}; },
-	'@{}' => sub { shift; };
+	'0+'   => sub { 1 + $#{shift()}; },
+	'""'   => sub { join "\n", @{shift()}; },
+	'@{}'  => sub { shift; };
 
 # Creates a new `Value` (or whatever subclasses it) by simply getting a
 # reference to the second argument.
@@ -109,6 +109,12 @@ sub set {
 	my ($list, $start, $len, $repl) = @_;
 	$start = int $start;
 	$len = int $len;
+
+	return __PACKAGE__->new(undef, undef);
+
+	Dump @$list[0..$start];
+	Dump @{$repl};
+	Dump @$list[$start + $len..$#$list];
 
 	# no warnings;
 	__PACKAGE__->new(

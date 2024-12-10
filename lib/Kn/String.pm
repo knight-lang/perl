@@ -6,14 +6,8 @@ use parent 'Kn::Value';
 
 use overload
 	'bool' => sub { ${shift()} ne '' },
-	'0+' => sub {
-		no warnings;
-
-		${shift()} =~ m/^\s*[-+]?\d*/p;
-
-		int ${^MATCH};
-	},
-	'@{}' => sub {
+	'0+'   => sub { no warnings; ${shift()} =~ m/^\s*[-+]?\d*/p; int ${^MATCH}; },
+	'@{}'  => sub {
 		my $str = ${shift()};
 		my @list = map {Kn::String->new($_)} split //, $str;
 		\@list
