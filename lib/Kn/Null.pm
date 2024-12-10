@@ -10,7 +10,7 @@ use overload
 	'""' => sub { '' },
 	'@{}' => sub { \@empty };
 
-my $null;
+my $null = 0;
 # Unlike every other value, `Null`s do not take arguments.
 sub new {
 	bless \$null, shift

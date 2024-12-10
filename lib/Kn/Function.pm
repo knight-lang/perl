@@ -34,7 +34,9 @@ sub run {
 
 # Gets a single line from stdin.
 __PACKAGE__->register('P', 0, sub {
-	Kn::String->new(scalar <STDIN>);
+	$_ = scalar <STDIN> or return Kn::Null->new();
+	s/\r*\n?$//;
+	Kn::String->new($_);
 });
 
 # Gets a random number from `0 - 0xffff_ffff`.
@@ -74,7 +76,8 @@ __PACKAGE__->register('!', 1, sub {
 
 # Gets the length of the given argument as a string.
 __PACKAGE__->register('L', 1, sub {
-	Kn::Number->new(scalar @{shift()});
+	my $sh = shift->run();
+	Kn::Number->new(scalar @{$sh});
 });
 
 # Dumps a value's representation, then returns it.
