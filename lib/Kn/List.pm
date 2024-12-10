@@ -63,11 +63,10 @@ sub cmp {
 # we check for equality with `eq` not `==`.
 sub eql {
 	my ($lhs, $rhs) = @_;
+	return unless ref $lhs eq ref $rhs; # Make sure they refer to the same type
 
-	return unless ref($lhs) eq ref($rhs);
 	my @lhs = @$lhs;
 	my @rhs = @$rhs;
-
 	return unless $#lhs == $#rhs;
 	
 	for (my $i = 0; $i <= $#lhs; $i++) {
@@ -86,8 +85,7 @@ sub head {
 sub tail {
 	my @list = @{shift()};
 	die "head on empty list" if $#list == -1;
-	shift @list;
-	return __PACKAGE__->new(@list);
+	return __PACKAGE__->new(@list[1..$#list]);
 }
 
 # Dumps the class's info. Used for debugging.
@@ -95,22 +93,20 @@ sub dump {
 	my @list = @{shift()};
 	my $dump = '[';
 
-	'[' . join(', ', map{$_->dump} @list) . ']'
+	'[' . join(', ', map{ $_->dump } @list) . ']'
 }
 
 sub get {
 	my ($list, $start, $len) = @_;
 	$start = int $start;
-	$len = int $len;
+	$len   = int $len;
 	__PACKAGE__->new(@$list[$start..$start + $len - 1]);
 }
 
 sub set {
 	my ($list, $start, $len, $repl) = @_;
 	$start = int $start;
-	$len = int $len;
-
-	return __PACKAGE__->new(undef, undef);
+	$len   = int $len;
 
 	Dump @$list[0..$start];
 	Dump @{$repl};

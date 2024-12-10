@@ -14,9 +14,7 @@ sub get {
 # Registers a new function with the given name, arity, and body.
 sub register {
 	my ($class, $name, $argc, $block) = @_;
-
 	$name = substr($name, 0, 1) or die 'a name is required';
-
 	$funcs{$name} = bless { argc => $argc, block => $block }, $class;
 }
 

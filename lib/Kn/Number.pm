@@ -37,9 +37,9 @@ sub dump {
 sub ascii {
 	my $num = ${shift()};
 
-	die "Invalid ascii value '$num'." unless 0 < $num && $num <= ord('~');
+	die "Invalid ascii value '$num'." unless 0 < $num <= ord '~';
 
-	Kn::String->new(chr($num));
+	Kn::String->new(chr $num);
 }
 
 1;

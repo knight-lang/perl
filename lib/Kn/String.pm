@@ -32,8 +32,7 @@ sub cmp {
 # we check for equality with `eq` not `==`.
 sub eql {
 	my ($lhs, $rhs) = @_;
-
-	ref($lhs) eq ref($rhs) && $$lhs eq $$rhs
+	ref $lhs eq ref $rhs && $$lhs eq $$rhs
 }
 
 # Parses a string out, which should start with either `'` or `"`, after which

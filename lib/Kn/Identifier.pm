@@ -13,9 +13,7 @@ my %variables;
 # Returns `undef` if the stream doesn't start with an identifier.
 sub parse {
 	my ($class, $stream) = @_;
-
 	$$stream =~ s/\A[a-z_][a-z0-9_]*//p or return;
-
 	$class->new(${^MATCH});
 }
 
