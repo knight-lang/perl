@@ -90,7 +90,11 @@ __PACKAGE__->register(',', 1, sub {
 });
 
 __PACKAGE__->register('[', 1, sub {
-	Kn::List->new(shift->run());
+	shift->run()->head();
+});
+
+__PACKAGE__->register(']', 1, sub {
+	shift->run()->tail();
 });
 
 # Outputs the given argument, which it then returns. If the argument ends with
@@ -111,7 +115,7 @@ __PACKAGE__->register('A', 1, sub {
 
 # Negates the argument
 __PACKAGE__->register('~', 1, sub {
-	Kn::Number->new(int shift->run());
+	Kn::Number->new(-int shift->run());
 });
 
 # Adds two values together.

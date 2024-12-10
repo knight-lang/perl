@@ -5,7 +5,7 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'bool' => sub { $#{shift()}; },
+	'bool' => sub { $#{shift()} >= 0; },
 	'0+' => sub { $#{shift()}; },
 	'""' => sub { join "\n", @{shift()}; };
 
@@ -74,6 +74,20 @@ sub eql {
 
 	1;
 }
+
+sub head {
+	my @list = @{shift()};
+	die "head on empty list" if $#list == -1;
+	return $list[0];
+}
+
+sub tail {
+	my @list = @{shift()};
+	die "head on empty list" if $#list == -1;
+	shift @list;
+	return __PACKAGE__->new(@list);
+}
+
 # Dumps the class's info. Used for debugging.
 sub dump {
 	my @list = @{shift()};
@@ -81,5 +95,7 @@ sub dump {
 
 	'[' . join(', ', map{$_->dump()} @list) . ']'
 }
+
+
 
 1;

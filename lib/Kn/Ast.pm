@@ -42,7 +42,7 @@ sub run {
 sub parse {
 	my ($class, $stream) = @_;
 
-	$$stream =~ s$\A[A-Z]+|\A[-+*/%^<?>&|!`;=]$$p or return;
+	$$stream =~ s$\A[A-Z]+|\A[-+*/%^<?>&|!`;=~,\[\]]$$p or return;
 	my $op = substr ${^MATCH}, 0, 1;
 	my $func = Kn::Function->get($op) or die "unknown function '$op'";
 

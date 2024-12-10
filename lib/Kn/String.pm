@@ -78,4 +78,16 @@ sub ascii {
 	Kn::Number->new(ord($str));
 }
 
+sub head {
+	my $string = ${shift()};
+	die "head on empty string" unless length $string;
+	return __PACKAGE__->new(substr $string, 0, 1);
+}
+
+sub tail {
+	my $string = ${shift()};
+	die "tail on empty string" unless length $string;
+	return __PACKAGE__->new(substr $string, 1);
+}
+
 1;
