@@ -359,12 +359,12 @@ register '^', 2, sub {
 
 # Sees if the first argument is smaller than the second.
 register '<', 2, sub {
-	new_bool(0 > compare run(shift), run(shift))
+	new_bool 0 > compare run(shift), run(shift
 };
 
 # Sees if the first argument is larger than the second.
 register '>', 2, sub {
-	new_bool(0 < compare run(shift), run(shift))
+	new_bool 0 < compare run(shift), run(shift)
 };
 
 # Sees if two arguments are equal.
@@ -428,8 +428,8 @@ register 'G', 3, sub {
 # with the fourth argument.
 register 'S', 4, sub {
 	my ($kind, $data) = @{run shift};
-	my $idx = to_int shift;
-	my $len = to_int shift;
+	my $idx  = to_int shift;
+	my $len  = to_int shift;
 	my $repl = run shift;
 
 	$kind == KIND_STR and return new_str(
@@ -437,9 +437,7 @@ register 'S', 4, sub {
 	);
 
 	$kind == KIND_LIST and return new_list(
-		@{$data}[0..$idx-1],
-		to_list($repl),
-		@{$data}[$idx + $len..$#$data]
+		@{$data}[0..$idx-1], to_list($repl), @{$data}[$idx + $len..$#$data]
 	);
 
 	die "cannot set subcontainer of $kind";
