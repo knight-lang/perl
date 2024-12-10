@@ -108,17 +108,17 @@ sub set {
 	$start = int $start;
 	$len   = int $len;
 
-	return 0;
+	# return 0;
 
-	Dump @$list[0..$start];
-	Dump @{$repl};
-	Dump @$list[$start + $len..$#$list];
+	# Dump @$list[0..$start];
+	# Dump @{$repl};
+	# Dump @$list[$start + $len..$#$list];
 
 	# no warnings;
 	__PACKAGE__->new(
-		@$list[0..$start],
-		@{$repl},
-		@$list[$start + $len..$#$list]
+		@$list[0..$start] // (),
+		@{$repl} // (),
+		@$list[$start + $len..$#$list] // ()
 	);
 }
 
