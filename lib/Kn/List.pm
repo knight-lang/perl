@@ -51,7 +51,7 @@ sub cmp {
 
 	my $cmp;
 	for (my $i = 0; $i <= $minlen; $i++) {
-		$cmp = $lhs[i].cmp($rhs[i]) and return $cmp;
+		$cmp = $lhs[$i]->cmp($rhs[$i]) and return $cmp;
 	}
 
 	$#lhs <=> $#rhs;
@@ -69,7 +69,7 @@ sub eql {
 	return unless $#lhs == $#rhs;
 	
 	for (my $i = 0; $i <= $#lhs; $i++) {
-		return unless $lhs[i].eql($rhs[i]);
+		return unless $lhs[$i]->eql($rhs[$i]);
 	}
 
 	1;

@@ -355,7 +355,7 @@ register '^', 2, sub {
 
 # Sees if the first argument is smaller than the second.
 register '<', 2, sub {
-	new_bool 0 > compare run(shift), run(shift
+	new_bool 0 > compare run(shift), run(shift)
 };
 
 # Sees if the first argument is larger than the second.
