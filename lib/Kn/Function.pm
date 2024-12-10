@@ -14,7 +14,7 @@ sub get {
 # Registers a new function with the given name, arity, and body.
 sub register {
 	my ($class, $name, $argc, $block) = @_;
-	$name = substr($name, 0, 1) or die 'a name is required';
+	$name = substr $name, 0, 1 or die 'a name is required';
 	$funcs{$name} = bless { argc => $argc, block => $block }, $class;
 }
 
@@ -24,7 +24,6 @@ sub arity {
 
 sub run {
 	my ($self, @args) = @_;
-
 	$self->{block}->(@args);
 }
 
@@ -79,7 +78,6 @@ __PACKAGE__->register('L', 1, sub {
 # Dumps a value's representation, then returns it.
 __PACKAGE__->register('D', 1, sub {
 	my $val = shift->run;
-
 	print $val->dump;
 	$val;
 });
@@ -103,8 +101,10 @@ __PACKAGE__->register('O', 1, sub {
 	my $val = shift->run;
 	my $str = "$val";
 
-	print(substr($str, -1) eq '\\' ? substr($str, 0, -1) : "$str\n");
-	$val
+	$str =~ s/\\$// or $str .= "\n";
+
+	print $str;
+	Kn::Null->new;
 });
 
 # Adds two values together.
@@ -178,10 +178,8 @@ __PACKAGE__->register('=', 2, sub {
 # the last result of running the body, or `Null` if the body never ran.
 __PACKAGE__->register('W', 2, sub {
 	my ($cond, $body) = @_;
-	my $ret;
-
-	$ret = $body->run while $cond;
-	defined($ret) ? $ret : Kn::Null->new;
+	$body->run while $cond;
+	Kn::Null->new;
 });
 
 # If the first argument is falsey, it's returned. Otherwise, the second argument
@@ -201,7 +199,7 @@ __PACKAGE__->register('|', 2, sub {
 # If the first argument is true, evaluates and runs the second argument.
 # otherwise, evaluates and runs the third.
 __PACKAGE__->register('I', 3, sub {
-	$_[$_[0] ? 1 : 2]->run
+	$_[shift ? 0 : 1]->run
 });
 
 # Gets a substring of the first argument, starting at the second argument,
