@@ -109,6 +109,11 @@ __PACKAGE__->register('A', 1, sub {
 	shift->run()->ascii();
 });
 
+# Negates the argument
+__PACKAGE__->register('~', 1, sub {
+	Kn::Number->new(int shift->run());
+});
+
 # Adds two values together.
 __PACKAGE__->register('+', 2, sub {
 	shift->run()->add(shift->run());
