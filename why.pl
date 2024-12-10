@@ -1,79 +1,102 @@
 #!/usr/bin/perl
 
+# This implements Knight in perl. It should work on most modern perl versions, but I've only tested
+# it on version 5.34.
+#
+# It's the standard tree-walker implementation, where objects are represented by a two-value-long
+# array where the first value is the the kind of the object. I've written it in somewhat-readable
+# perl.
+
+####################################################################################################
+#                                             Prelude                                              #
+####################################################################################################
+
+# My perl is 5.34; This script doesn't do anything fancy, and can probably run on earlier ones,
+# but I haven't actually tested them out.
+use v5.34;
+
+# Enable warnings and strict mode. We disable `recursion` as we do a lot of recursion in Knight.
 use warnings;
 use strict;
 no warnings 'recursion';
-
-# Types in this implementation are handled via hashes: The `kind` value is one
-# of the following constants, and the `data` value corresponds to the data of
-# that type. Only the `KIND_FUNC` functions differently---instead of a `data`
-# field, it has both `func` and `args` fields.
 
 ####################################################################################################
 #                                          Value Creation                                          #
 ####################################################################################################
 
-use constant KIND_INT  => 0;
-use constant KIND_STR  => 1;
-use constant KIND_LIST => 2;
-use constant KIND_BOOL => 3;
-use constant KIND_NULL => 4;
-use constant KIND_VAR  => 5;
-use constant KIND_FUNC => 6;
+# Constants for value representation.
+use constant {
+	KIND_INT  => 0,
+	KIND_STR  => 1,
+	KIND_LIST => 2,
+	KIND_BOOL => 3,
+	KIND_NULL => 4,
+	KIND_VAR  => 5,
+	KIND_FUNC => 6,
+};
 
-use constant IDX_KIND => 0;
-use constant IDX_DATA => 1;
-use constant IDX_FUNC => 1;
-use constant IDX_ARGS => 2;
+# Constants for indexing into values.
+use constant {
+	IDX_KIND => 0,
+	IDX_DATA => 1,
+};
 
-our $NULL =  [KIND_NULL, 0];
-our $TRUE =  [KIND_BOOL, 1];
-our $FALSE = [KIND_BOOL, 0];
+# Constants used within Knight itself.
+use constant {
+	KN_NULL  => [KIND_NULL, 0],
+	KN_TRUE  => [KIND_BOOL, 1],
+	KN_FALSE => [KIND_BOOL, 0],
+};
 
+# Converts its argument to a list.
+sub to_list {
+	my ($kind, $data) = @{shift()};
+
+	my $t = KN_TRUE;
+	printf "%d\n", $t;
+	return $data ? ($t,) : my @dummy
+}
+
+print scalar to_list KN_TRUE;
+
+__END__
+# The list of all variables. This is used within `new_var`.
+our %variables;
+
+# Creation functions
 sub new_int  { [KIND_INT,  int shift] }
 sub new_str  { [KIND_STR,  shift] }
 sub new_list { [KIND_LIST, [@_]] }
-sub new_bool { shift ? $TRUE : $FALSE }
-
-our %known_variables;
-sub lookup_variable {
-	$known_variables{$_[0]} ||= [KIND_VAR, undef]
-}
-
-####################################################################################################
-#                                            Utilities                                             #
-####################################################################################################
-
-# Returns the data and kind of its argument
-sub explode {
-	@{shift()}[IDX_KIND, IDX_DATA]
-}
-
-sub run;
-sub run_if_needed {
-	my $value = shift;
-	KIND_VAR <= $value->[IDX_KIND] ? run $value : $value;
-}
+sub new_bool { shift ? KN_TRUE : KN_FALSE }
+sub new_var  { $variables{shift()} ||= [KIND_VAR, undef] }
+sub new_func { [KIND_FUNC, @_] }
 
 ####################################################################################################
 #                                            Conversion                                            #
 ####################################################################################################
 
+# Utility function to execute arguments if needed.
+sub run_if_needed {
+	sub run;
+
+	my $value = shift;
+	KIND_VAR <= $value->[IDX_KIND] ? run $value : $value;
+}
+
+
 # Converts its argument to an integer.
 sub to_int {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_LIST and return int @$data;
-	# Normal perl string->int conversion doesn't follow the knight spec.
-	$kind == KIND_STR  and return ($data =~ /^\s*([-+]?\d+)/) ? $1 : 0;
+	$kind == KIND_STR  and $data =~ /^\s*\K[-+]?\d+/, return $& || 0;
 
 	int $data
 }
 
-
 # Converts its argument to a string.
 sub to_str {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind <= KIND_STR  and return $data;
 	$kind == KIND_LIST and return join "\n", map{to_str($_)} @$data;
@@ -84,7 +107,7 @@ sub to_str {
 
 # Converts its argument to a boolean.
 sub to_bool {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_STR  and return '' ne $data;
 	$kind == KIND_LIST and return scalar @$data;
@@ -94,13 +117,15 @@ sub to_bool {
 
 # Converts its argument to a list.
 sub to_list {
-	my ($kind, $data) = explode run_if_needed shift;
+	my ($kind, $data) = @{run_if_needed shift};
 
 	$kind == KIND_LIST and return @$data;
-	$kind == KIND_STR  and return map {new_str $_} split(//, $data);
-	$kind == KIND_INT  and return map {new_int($data < 0 ? -$_ : $_)} split //, abs $data;
+	$kind == KIND_STR  and return map {new_str $_} split //, $data;
+	$kind == KIND_INT  and return map {new_int $data < 0 ? -$_ : $_} split //, abs $data;
 
-	$data ? $TRUE : ()
+	my $t = KN_TRUE;
+	printf "%d\n", $t;
+	return $data ? ($t,) : my @dummy
 }
 
 ####################################################################################################
@@ -109,36 +134,32 @@ sub to_list {
 
 # Gets a string representation of its argument.
 sub repr {
-	my ($kind, $data) = explode shift;
+	my ($kind, $data) = @{shift()};
 
 	$kind == KIND_INT  and return $data;
 	$kind == KIND_BOOL and return $data ? 'true' : 'false';
 	$kind == KIND_NULL and return 'null';
 	$kind == KIND_LIST and return '[' . join(', ', map {repr($_)} @$data) . ']';
-	$kind != KIND_STR  and return '<other>';
+	$kind == KIND_STR  or  return '<other>';
 
-	my $r = '"';
-	foreach (split //, $data) {
-		if ($_ eq "\r") { $r .= '\r'; next }
-		if ($_ eq "\n") { $r .= '\n'; next }
-		if ($_ eq "\t") { $r .= '\t'; next }
-		$r .= '\\' if $_ eq '\\' || $_ eq '"';
-		$r .= $_;
-	}
-
-	return $r . '"'
+	$_ = $data;
+	s/[\\"]/\\$&/g;
+	s/\r/\\r/g;
+	s/\n/\\n/g;
+	s/\t/\\t/g;
+	return qq/"$_"/;
 }
 
 # Sees if two values are equal. Essentially `==`/`eq` for values.
 sub are_eql {
 	my ($lhs, $rhs) = @_;
-	$lhs == $rhs                         and return 1; # Exact same object
-	$lhs->[IDX_KIND] != $rhs->[IDX_KIND] and return 0; # Kinds aren't the same
+	return 1 if $lhs == $rhs; # Exact same object
+	return 0 unless $lhs->[IDX_KIND] == $rhs->[IDX_KIND]; # Kinds aren't the same
 
-	my ($lkind, $ldata) = explode $lhs;
+	my ($lkind, $ldata) = @$lhs;
 	$lkind == KIND_INT  and return $ldata == $rhs->[IDX_DATA];
 	$lkind == KIND_STR  and return $ldata eq $rhs->[IDX_DATA];
-	$lkind != KIND_LIST and return 0; # All other kinds aren't equal
+	$lkind == KIND_LIST or  return 0; # All other kinds aren't equal
 
 	my @l = @$ldata;
 	my @r = @{$rhs->[IDX_DATA]};
@@ -150,12 +171,12 @@ sub are_eql {
 # Compares two values. Essentially `<=>`/`cmp` for values.
 sub compare {
 	my ($lhs, $rhs) = @_;
-	my ($lkind, $ldata) = explode $lhs;
+	my ($lkind, $ldata) = @$lhs;
 
 	$lkind == KIND_INT  and return $ldata <=> to_int $rhs;
 	$lkind == KIND_STR  and return $ldata cmp to_str $rhs;
 	$lkind == KIND_BOOL and return $ldata <=> !!to_bool $rhs;
-	$lkind != KIND_LIST and die "cannot compare $lkind";
+	$lkind == KIND_LIST or  die "cannot compare $lkind";
 
 	my @lhs = @$ldata;
 	my @rhs = to_list $rhs;
@@ -173,13 +194,17 @@ sub compare {
 
 # Executes its argument.
 sub run {
-	my $value = shift;
+	my ($value) = @_;
 	$value->[IDX_KIND] < KIND_VAR  and return $value;
-	$value->[IDX_KIND] == KIND_VAR and return $value->[IDX_DATA];
+	# $value->[IDX_KIND] == KIND_VAR and return $value->[IDX_DATA];
+	if ($value->[IDX_KIND] == KIND_VAR) {
+		# print "{@$value @{$value->[IDX_DATA]}}\n";
+		return $value->[IDX_DATA];
+	}
 
-	# Manual tail-call recursion lmao
-	@_ = @$value; shift;
-	goto shift;
+
+	(undef, my $sub, @_) = @$value;
+	goto &$sub;
 }
 
 ####################################################################################################
@@ -194,10 +219,10 @@ sub register {
 
 # Reads a line from stdin.
 register 'P', 0, sub {
-	my $line = <STDIN>;
-	return $NULL unless defined $line;
-	$line =~ s/\r*\n?$//;
-	new_str $line
+	$_ = <STDIN>; # Technically `<>` is the same, as the command-line args are all handled.
+	return KN_NULL unless defined; # Ensure a line is read in
+	s/\r*\n?$//; # Strip trailing `\r\n`
+	new_str $_
 };
 
 # Gets a random integer from 0-0xffffffff
@@ -206,9 +231,9 @@ register 'R', 0, sub {
 };
 
 # Evaluates its argument as knight code.
-sub parse;
 register 'E', 1, sub {
-	run parse to_str shift
+	sub play;
+	play to_str shift
 };
 
 # Simply returns the argument unchanged.
@@ -223,8 +248,8 @@ register 'C', 1, sub {
 
 # Executes its argument as a shell command, and returns it.
 register '$', 1, sub {
-	my $str = to_str shift;
-	new_str scalar `$str`
+	my $shell_command = to_str shift;
+	new_str scalar `$shell_command`
 };
 
 # Stops the interpreter with the given exit code.
@@ -241,8 +266,7 @@ register '!', 1, sub {
 register 'L', 1, sub {
 	# We cant make this one-line because if `to_list` returns a single element,
 	# it won't return 1 from `scalar`, but rather the element's pointer..
-	my @list = to_list shift;
-	new_int scalar @list
+	new_int scalar to_list shift
 };
 
 # Writes a debugging representation to stdout and then returns it.
@@ -258,14 +282,16 @@ register 'O', 1, sub {
 	$_ = to_str shift;
 	s/\\$// or $_ .= "\n";
 	print;
-	$NULL
+	KN_NULL
 };
 
 # Returns either the `chr` or `ord` of its argument, depending on its type.
 register 'A', 1, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
+
 	$kind == KIND_INT and return new_str chr $data;
 	$kind == KIND_STR and return new_int ord $data;
+
 	die "cannot ascii $kind";
 };
 
@@ -281,7 +307,7 @@ register ',', 1, sub {
 
 # Gets the first element/character of its argument.
 register '[', 1, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 
 	$kind == KIND_STR  and return new_str substr $data, 0, 1;
 	$kind == KIND_LIST and return $data->[0];
@@ -291,7 +317,7 @@ register '[', 1, sub {
 
 # Gets everything _but_ first element/character of its argument.
 register ']', 1, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 
 	$kind == KIND_STR  and return new_str substr $data, 1;
 	$kind == KIND_LIST and return new_list @{$data}[1..$#$data];
@@ -301,7 +327,7 @@ register ']', 1, sub {
 
 # Adds/concatenates its arguments together.
 register '+', 2, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 
 	$kind == KIND_INT  and return new_int $data + to_int shift;
 	$kind == KIND_STR  and return new_str $data . to_str shift;
@@ -317,12 +343,12 @@ register '-', 2, sub {
 
 # Multiplies/repeats its first argument with/by the second.
 register '*', 2, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 	my $amnt = to_int shift; # all 3 types use an integer for amount.
 
 	$kind == KIND_INT  and return new_int $data * $amnt;
 	$kind == KIND_STR  and return new_str $data x $amnt;
-	$kind != KIND_LIST and die "cannot multiply $kind";
+	$kind == KIND_LIST or  die "cannot multiply $kind";
 
 	my @list;
 	@list = (@list, @$data) while $amnt--;
@@ -331,17 +357,17 @@ register '*', 2, sub {
 
 # Divides the first argument by the second. Second cannot be zero.
 register '/', 2, sub {
-	new_int to_int(shift) / (to_int(shift) or die "cannot divide by zero")
+	new_int to_int(shift) / (to_int shift or die "cannot divide by zero")
 };
 
 # Modulos the first argument by the second. Second cannot be zero.
 register '%', 2, sub {
-	new_int to_int(shift) % (to_int(shift) or die "cannot modulo by zero")
+	new_int to_int(shift) % (to_int shift or die "cannot modulo by zero")
 };
 
 # Exponentiates integers or `join`s a list by a string.
 register '^', 2, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 
 	$kind == KIND_INT  and return new_int $data ** to_int shift;
 	$kind == KIND_LIST and return new_str join to_str(shift), map{to_str $_} @$data;
@@ -365,14 +391,14 @@ register '?', 2, sub {
 };
 
 # If the executed first argument is falsey, it's returned. Otherwise the second
-# executed and returned.
+# is executed and returned.
 register '&', 2, sub {
 	my $value = run shift;
 	to_bool($value) ? run shift : $value;
 };
 
 # If the executed first argument is truthy, it's returned. Otherwise the second
-# executed and returned.
+# is executed and returned.
 register '|', 2, sub {
 	my $value = run shift;
 	to_bool($value) ? $value : run shift;
@@ -395,7 +421,7 @@ register '=', 2, sub {
 register 'W', 2, sub {
 	my ($cond, $body) = @_;
 	run $body while to_bool $cond;
-	$NULL
+	KN_NULL
 };
 
 # Executes the second/third argument depending on the truthiness of the first.
@@ -406,7 +432,7 @@ register 'I', 3, sub {
 
 # Gets a sublist/substring of the first argument with the given range.
 register 'G', 3, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 	my $idx = to_int shift;
 	my $len = to_int shift;
 
@@ -419,7 +445,7 @@ register 'G', 3, sub {
 # Replaces a new sublist/substring where the first argument's range is replaced
 # with the fourth argument.
 register 'S', 4, sub {
-	my ($kind, $data) = explode run shift;
+	my ($kind, $data) = @{run shift};
 	my $idx = to_int shift;
 	my $len = to_int shift;
 	my $repl = run shift;
@@ -447,6 +473,7 @@ register 'S', 4, sub {
 #                                             Parsing                                              #
 ####################################################################################################
 
+# Parse a variable out
 sub parse {
 	$_ = shift;
 
@@ -456,23 +483,30 @@ sub parse {
 	# Parse non-functions with the simple regex.
 	s/^\d+//              and return new_int $&;
 	s/^(["'])(.*?)\1//s   and return new_str $2;
-	s/^[a-z_][a-z0-9_]*// and return lookup_variable $&;
+	s/^[a-z_][a-z0-9_]*// and return new_var $&;
 	s/^([TF])[A-Z_]*//    and return new_bool $1 eq 'T';
-	s/^N[A-Z_]*//         and return $NULL;
+	s/^N[A-Z_]*//         and return KN_NULL;
 	s/^@//                and return new_list;
 	s/^([A-Z_]+|.)//      or  return; # If we can't parse a function, return nothing.
 
+	# Get function name.
 	my $name = substr $&, 0, 1;
-	my ($arity, $func) = @{$functions{$name} or die "unknown character '$name'"};
+	my ($arity, $func) = @{$functions{$name} or die "unknown token start '$name'"};
 
 	# Parse Arguments
 	my @args;
-	for (my $i = 0; $i < $arity; $i++) {
-		push @args, (parse $_ or die "missing argument $i for function '$name'");
+	foreach my $i (1..$arity) {
+		push @args, parse($_) || die("missing argument $i for function '$name'");
 	}
 
 	# Creates the function
-	[KIND_FUNC, $func, @args]
+	new_func $func, @args
+}
+
+# Parse a program and execute it
+sub play {
+	my $program = parse shift or die "no program given";
+	run $program
 }
 
 ####################################################################################################
@@ -485,9 +519,12 @@ my $expr;
 if ($flag eq '-e') {
 	$expr = shift;
 } elsif ($flag eq '-f') {
-	$expr = join '', <>;
+	$expr = join "\n", <>; # Notably not <STDIN>
 }
 
-die "usage: $0 (-e 'expr' | -f file)" unless defined($expr) && $#ARGV == -1;
+unless(defined($expr) && $#_ == -1) {
+	print STDERR "usage: $0 (-e 'expr' | -f file)";
+	exit 1;
+}
 
-run parse($expr) || die('nothing to parse?');
+play $expr;
