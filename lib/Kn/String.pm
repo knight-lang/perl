@@ -90,4 +90,19 @@ sub tail {
 	return __PACKAGE__->new(substr $string, 1);
 }
 
+sub get {
+	my ($str, $start, $len) = @_;
+	__PACKAGE__->new(substr $$str, $start, $len);
+}
+
+sub set {
+	my ($str, $start, $len, $repl) = @_;
+	$start = int $start;
+	$len = int $len;
+	$repl = "$repl";
+
+	no warnings;
+	__PACKAGE__->new(substr($str, 0, $start) . $repl . substr($str, $start + $len));
+}
+
 1;

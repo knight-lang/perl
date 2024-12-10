@@ -211,21 +211,13 @@ __PACKAGE__->register('I', 3, sub {
 # Gets a substring of the first argument, starting at the second argument,
 # with a length of the third argument.
 __PACKAGE__->register('G', 3, sub {
-	no warnings;
-
-	Kn::String->new(substr($_[0], $_[1], $_[2]));
+	shift->run()->get(@_);
 });
 
 # Returns a new string where the first argument's substring starting at the 
 # second argument with length the third argument is replaced with the fourth.
 __PACKAGE__->register('S', 4, sub {
-	my $str = "$_[0]";
-	my $idx = int $_[1];
-	my $len = int $_[2];
-	my $repl = "$_[3]";
-
-	no warnings;
-	Kn::String->new(substr($str, 0, $idx) . $repl . substr($str, $idx + $len));
+	shift->run()->set(@_);
 });
 
 1;

@@ -2,18 +2,23 @@ package Kn::List;
 use strict;
 use warnings;
 
+use Devel::Peek;
 use parent 'Kn::Value';
 
 use overload
 	'bool' => sub { $#{shift()} >= 0; },
 	'0+' => sub { 1 + $#{shift()}; },
-	'""' => sub { join "\n", @{shift()}; };
+	'""' => sub { join "\n", @{shift()}; },
+	'@{}' => sub {
+		Dump $_;
+		return @{shift()};
+	} ;
 
 # Creates a new `Value` (or whatever subclasses it) by simply getting a
 # reference to the second argument.
 sub new {
 	my $class = shift;
-	bless \@_, $class;
+	bless [@_], $class;
 }
 
 sub parse {
@@ -96,6 +101,24 @@ sub dump {
 	'[' . join(', ', map{$_->dump()} @list) . ']'
 }
 
+sub get {
+	my ($list, $start, $len) = @_;
+	$start = int $start;
+	$len = int $len;
+	__PACKAGE__->new(@$list[$start..$start + $len - 1]);
+}
 
+sub set {
+	my ($list, $start, $len, $repl) = @_;
+	$start = int $start;
+	$len = int $len;
+
+	no warnings;
+	__PACKAGE__->new(
+		@$list[0..$start],
+		@{$repl},
+		@$list[$start + $len..$#$list]
+	);
+}
 
 1;
