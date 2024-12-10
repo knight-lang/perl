@@ -4,7 +4,7 @@ use warnings;
 
 use parent 'Kn::Value';
 
-my %VARS;
+my %variables;
 
 # Parse an identifier from the start of the stream, which must start with a
 # lower case letter (or `_`), and then may contain any number of digits, lower
@@ -21,7 +21,13 @@ sub parse {
 
 # Run this argument by fetching its value from the environment.
 sub run {
-	Kn::Environment->get(${shift()});
+	my ($name) = @_;
+	$variables{$$name}
+}
+
+sub assign {
+	my ($name, $value) = @_;
+	$variables{$$name} = $value;
 }
 
 # Dumps the class's info. Used for debugging.

@@ -3,8 +3,6 @@ use strict;
 use warnings;
 no warnings 'recursion';
 
-use Kn::Environment;
-
 my %funcs;
 
 # Fetches the function associated with the given value, or `undef` if no such
@@ -175,7 +173,7 @@ __PACKAGE__->register(';', 2, sub {
 # Assigns the second argument to the first. If the first argument is not
 # an identifier, it is first evaluated and then converted to a string.
 __PACKAGE__->register('=', 2, sub {
-	Kn::Environment->set(${shift()}, shift->run);
+	shift->assign(shift->run);
 });
 
 # Executes the second argument while the first one evaluates to true. Returns

@@ -5,8 +5,8 @@ use warnings;
 use parent 'Kn::Value';
 
 use overload
-	'""'  => sub { shift() ? 'true' : 'false'; },
-	'@{}' => sub { my @l; push @l, shift if ($_[0]); \@l };
+	'""'  => sub { shift ? 'true' : 'false'; },
+	'@{}' => sub { my @l; push @l, $_[0] if $_[0]; \@l };
 
 # Parses a new boolean.
 sub parse {
@@ -19,12 +19,12 @@ sub parse {
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	shift() ? 'true' : 'false';
+	shift ? 'true' : 'false';
 }
 
 # Compares the booleans strings lexicographically.
 sub cmp {
-	(shift() ? 1 : 0) - (shift() ? 1 : 0)
+	(!!shift) <=> (!!shift)
 }
 
 1;
