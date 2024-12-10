@@ -154,12 +154,12 @@ __PACKAGE__->register('?', 2, sub {
 
 # Checks to see if the first value is less than the second
 __PACKAGE__->register('<', 2, sub {
-	Kn::Boolean->new(shift->run->lth(shift->run));
+	Kn::Boolean->new(shift->run->cmp(shift->run) < 0);
 });
 
 # Checks to see if the first value is greater than the second
 __PACKAGE__->register('>', 2, sub {
-	Kn::Boolean->new(shift->run->gth(shift->run));
+	Kn::Boolean->new(shift->run->cmp(shift->run) > 0);
 });
 
 # Simply executes the first argument, then executes and returns second.

@@ -12,7 +12,7 @@ use Kn;
 
 # Prints a usage message and exists.
 sub usage {
-	print STDERR "usage: " . basename(__FILE__) . " (-e program | -f file)\n";
+	print STDERR 'usage: ' . basename(__FILE__) . " (-e program | -f file)\n";
 	exit 1;
 }
 

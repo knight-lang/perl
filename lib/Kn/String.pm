@@ -42,7 +42,7 @@ sub parse {
 	my ($class, $stream) = @_;
 
 	$$stream =~ s/\A(["'])((?:(?!\1).)*)(\1)?//s or return;
-	die "missing closing quote" unless $3;
+	die 'missing closing quote' unless $3;
 
 	$class->new($2)
 }
@@ -64,22 +64,20 @@ sub dump {
 
 # Converts its argument into an ASCII value.
 sub ascii {
-	my $str = ${shift()};
-
-	die "Passed string is empty" if $str eq '';
-
-	Kn::Number->new(ord($str));
+	my $string = ${shift()};
+	length $string or die 'ascii on empty string';
+	Kn::Number->new(ord($string));
 }
 
 sub head {
 	my $string = ${shift()};
-	die "head on empty string" unless length $string;
+	length $string or die 'head on empty string';
 	return __PACKAGE__->new(substr $string, 0, 1);
 }
 
 sub tail {
 	my $string = ${shift()};
-	die "tail on empty string" unless length $string;
+	length $string or die 'tail on empty string';
 	return __PACKAGE__->new(substr $string, 1);
 }
 
@@ -91,8 +89,8 @@ sub get {
 sub set {
 	my ($str, $start, $len, $repl) = @_;
 	$start = int $start;
-	$len = int $len;
-	$repl = "$repl";
+	$len   = int $len;
+	$repl  = "$repl";
 
 	no warnings;
 	__PACKAGE__->new(substr($str, 0, $start) . $repl . substr($str, $start + $len));

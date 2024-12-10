@@ -39,7 +39,7 @@ sub mul {
 
 sub pow {
 	my @list = @{shift()};
-	my $sep = "" . shift;
+	my $sep = '' . shift;
 
 	Kn::String->new(join $sep, @list)
 }
@@ -78,13 +78,13 @@ sub eql {
 
 sub head {
 	my @list = @{shift()};
-	die "head on empty list" if $#list == -1;
+	die 'head on empty list' if $#list == -1;
 	return $list[0];
 }
 
 sub tail {
 	my @list = @{shift()};
-	die "head on empty list" if $#list == -1;
+	die 'head on empty list' if $#list == -1;
 	return __PACKAGE__->new(@list[1..$#list]);
 }
 
@@ -107,6 +107,8 @@ sub set {
 	my ($list, $start, $len, $repl) = @_;
 	$start = int $start;
 	$len   = int $len;
+
+	return 0;
 
 	Dump @$list[0..$start];
 	Dump @{$repl};

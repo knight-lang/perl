@@ -42,4 +42,50 @@ sub ascii {
 	Kn::String->new(chr $num);
 }
 
+# Adds two Values together by converting them both to numbers.
+sub add {
+	Kn::Number->new(int(shift) + int(shift));
+}
+
+# Subtract two Values by converting them both to numbers.
+sub sub {
+	Kn::Number->new(int(shift) - int(shift));
+}
+
+# Multiply two Values by converting them both to numbers.
+sub mul {
+	Kn::Number->new(int(shift) * int(shift));
+}
+
+# Divides the first number by the second, `die`ing if the second's zero.
+sub div {
+	my $lhs = int shift;
+	my $rhs = int shift or die 'cant divide by zero';
+
+	Kn::Number->new(int($lhs / $rhs));
+}
+
+# Modulo the first number by the second, `die`ing if the second's zero.
+sub mod {
+	my $lhs = int shift;
+	my $rhs = int shift or die 'cant modulo by zero';
+
+	Kn::Number->new($lhs % $rhs);
+}
+
+# Raises the first number to the power of the second.
+sub pow {
+	my $base = int shift;
+	my $exp  = int shift;
+
+	die 'cannot raise zero to a negative power' if !$base && $exp < 0;
+
+	Kn::Number->new(int($base ** $exp));
+}
+
+# Converts both values to integers and compares them.
+sub cmp {
+	int(shift) <=> int(shift);
+}
+
 1;
