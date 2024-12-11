@@ -10,7 +10,8 @@ use Kn::Function;
 use overload
 	'0+'   => 'run',
 	'""'   => 'run',
-	'bool' => 'run';
+	'bool' => 'run',
+	'@{}'  => 'run';
 
 # Creates a new `Ast` with the given function, operator name, and arguments.
 #

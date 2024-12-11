@@ -6,7 +6,7 @@ use parent 'Kn::Value';
 
 use overload
 	'""'  => sub { shift ? 'true' : 'false' },
-	'@{}' => sub { $_[0] ? [@_] : [] };
+	'@{}' => sub { $_[0] ? [$_[0]] : [] };
 
 # Parses a new boolean.
 sub parse {

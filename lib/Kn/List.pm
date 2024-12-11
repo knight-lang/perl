@@ -2,7 +2,6 @@ package Kn::List;
 use strict;
 use warnings;
 
-use Devel::Peek;
 use parent 'Kn::Value';
 
 use overload
@@ -107,19 +106,7 @@ sub set {
 	my ($list, $start, $len, $repl) = @_;
 	$start = int $start;
 	$len   = int $len;
-
-	# return 0;
-
-	# Dump @$list[0..$start];
-	# Dump @{$repl};
-	# Dump @$list[$start + $len..$#$list];
-
-	# no warnings;
-	__PACKAGE__->new(
-		@$list[0..$start] // (),
-		@{$repl} // (),
-		@$list[$start + $len..$#$list] // ()
-	);
+	__PACKAGE__->new(@$list[0..$start - 1], @$repl, @$list[$start + $len..$#$list])
 }
 
 1;
