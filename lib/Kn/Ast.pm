@@ -2,9 +2,9 @@ package Kn::Ast;
 
 use strict;
 use warnings;
-no warnings qw(recursion); # Knight does a lot of recursion
+no warnings qw/recursion/; # Knight does a lot of recursion
 
-use Scalar::Util qw(refaddr); # for `is_equal`
+use Scalar::Util qw/refaddr/; # for `is_equal`
 use Kn::Function;
 use parent 'Kn::Value';
 

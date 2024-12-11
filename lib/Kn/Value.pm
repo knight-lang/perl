@@ -2,7 +2,7 @@ package Kn::Value;
 
 use strict;
 use warnings;
-no warnings qw(recursion); # Knight does a lot of recursion.
+no warnings qw/recursion/; # Knight does a lot of recursion.
 
 # Default overloads (used by Identifier and Ast)
 use overload

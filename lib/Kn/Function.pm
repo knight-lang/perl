@@ -2,7 +2,7 @@ package Kn::Function;
 
 use strict;
 use warnings;
-no warnings qw(recursion); # Knight does a lot of recursion
+no warnings qw/recursion/; # Knight does a lot of recursion
 
 # All known functoins.
 my %funcs;
