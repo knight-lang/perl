@@ -13,7 +13,7 @@ use overload
 # reference to the second argument.
 sub new {
 	my ($class, $data) = @_;
-	bless \$data, $class;
+	bless \$data, $class
 }
 
 # Checks to see if the first argument is equal to the second by comparing their
@@ -25,7 +25,7 @@ sub is_equal {
 
 # Running a normal value simply returns it.
 sub run {
-	shift;
+	shift
 }
 
 # Import different types, so we can parse them.
@@ -50,7 +50,7 @@ sub parse {
 		return $ret if defined $ret;
 	}
 
-	die "unknown token start '" . substr($$stream, 0, 1) . "'";
+	die "unknown token start '" . substr($$stream, 0, 1) . "'"
 }
 
 1;

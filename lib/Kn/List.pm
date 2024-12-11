@@ -14,7 +14,7 @@ use overload
 # reference to the second argument.
 sub new {
 	my $class = shift;
-	bless [@_], $class;
+	bless [@_], $class
 }
 
 sub parse {
@@ -24,7 +24,7 @@ sub parse {
 }
 
 sub add {
-	Kn::List->new(@{shift()}, @{shift()});
+	Kn::List->new(@{shift()}, @{shift()})
 }
 
 sub mul {
@@ -33,7 +33,7 @@ sub mul {
 
 	my @res;
 	@res = (@res, @list) while $amnt--;
-	Kn::List->new(@res);
+	Kn::List->new(@res)
 }
 
 sub pow {
@@ -55,7 +55,7 @@ sub compare {
 		$cmp = $lhs[$i]->compare($rhs[$i]) and return $cmp;
 	}
 
-	$#lhs <=> $#rhs;
+	$#lhs <=> $#rhs
 }
 
 # Checks to see if two strings are equal. This differs from `Value`'s in that
@@ -72,19 +72,19 @@ sub is_equal {
 		return unless $lhs[$i]->is_equal($rhs[$i]);
 	}
 
-	1;
+	1
 }
 
 sub head {
 	my @list = @{shift()};
 	die 'head on empty list' if $#list == -1;
-	return $list[0];
+	return $list[0]
 }
 
 sub tail {
 	my @list = @{shift()};
 	die 'head on empty list' if $#list == -1;
-	return __PACKAGE__->new(@list[1..$#list]);
+	return __PACKAGE__->new(@list[1..$#list])
 }
 
 # Dumps the class's info. Used for debugging.
@@ -99,7 +99,7 @@ sub get {
 	my ($list, $start, $len) = @_;
 	$start = int $start;
 	$len   = int $len;
-	__PACKAGE__->new(@$list[$start..$start + $len - 1]);
+	__PACKAGE__->new(@$list[$start..$start + $len - 1])
 }
 
 sub set {

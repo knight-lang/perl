@@ -19,12 +19,12 @@ use overload
 
 # Converts both arguments to a string and concatenates them.
 sub add {
-	Kn::String->new(shift . shift);
+	Kn::String->new(shift . shift)
 }
 
 # Duplicates the first argument by the second argument's amount.
 sub mul {
-	Kn::String->new(shift() x shift);
+	Kn::String->new(shift() x shift)
 }
 
 # Compares the two strings lexicographically.
@@ -71,24 +71,24 @@ sub dump {
 sub ascii {
 	my $string = ${shift()};
 	length $string or die 'ascii on empty string';
-	Kn::Number->new(ord($string));
+	Kn::Number->new(ord($string))
 }
 
 sub head {
 	my $string = ${shift()};
 	length $string or die 'head on empty string';
-	return __PACKAGE__->new(substr $string, 0, 1);
+	return __PACKAGE__->new(substr $string, 0, 1)
 }
 
 sub tail {
 	my $string = ${shift()};
 	length $string or die 'tail on empty string';
-	return __PACKAGE__->new(substr $string, 1);
+	return __PACKAGE__->new(substr $string, 1)
 }
 
 sub get {
 	my ($str, $start, $len) = @_;
-	__PACKAGE__->new(substr $$str, $start, $len);
+	__PACKAGE__->new(substr $$str, $start, $len)
 }
 
 sub set {
@@ -98,7 +98,7 @@ sub set {
 	$repl  = "$repl";
 
 	no warnings;
-	__PACKAGE__->new(substr($str, 0, $start) . $repl . substr($str, $start + $len));
+	__PACKAGE__->new(substr($str, 0, $start) . $repl . substr($str, $start + $len))
 }
 
 1;

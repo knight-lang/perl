@@ -23,17 +23,17 @@ sub new {
 sub parse {
 	my ($class, $stream) = @_;
 	$$stream =~ s/\AN[A-Z]*//p or return;
-	$class->new;
+	$class->new
 }
 
 # You are not allowed to compare null.
 sub compare {
-	die 'Comparing by null is not allowed.';
+	die 'Comparing by null is not allowed.'
 }
 
 # Dumps the class's info. Used for debugging.
 sub dump {
-	'null';
+	'null'
 }
 
 1;
