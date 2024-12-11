@@ -1,11 +1,12 @@
 package Kn::Value;
+
 use strict;
 use warnings;
 no warnings qw(recursion); # Knight does a lot of recursion.
 
+# Default overloads (used by Identifier and Ast)
 use overload
 	'""'   => sub { ${shift->run} },
-	'bool' => sub { ${shift->run} }, # this is redundant really.
 	'0+'   => sub { ${shift->run} },
 	'@{}'  => sub { @{shift->run} };
 
@@ -16,14 +17,7 @@ sub new {
 	bless \$data, $class
 }
 
-# Checks to see if the first argument is equal to the second by comparing their
-# types and inner data.
-sub is_equal {
-	my ($lhs, $rhs) = @_;
-	ref $lhs eq ref $rhs && $$lhs == $$rhs
-}
-
-# Running a normal value simply returns it.
+# Running a normal value simply returns it by default.
 sub run {
 	shift
 }
@@ -37,8 +31,8 @@ use Kn::String;
 use Kn::Ast;
 use Kn::List;
 
-# Parses a Value from the stream, stripping leading whitespace and comments.
-# If the first character of the stream is invalid, the program `die`s.
+# Parses a Value from the stream, stripping leading whitespace and comments. If the first character
+# of the stream is invalid, the program `die`s.
 sub parse {
 	my $stream = $_[1];
 

@@ -13,7 +13,6 @@ use parent 'Kn::Value';
 use overload
 	'0+'   => 'run',
 	'""'   => 'run',
-	'bool' => 'run',
 	'@{}'  => 'run';
 
 # Creates a new `Ast` with the given function and arguments.

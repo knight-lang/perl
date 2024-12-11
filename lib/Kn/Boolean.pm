@@ -12,13 +12,19 @@ use overload
 # Parses a new boolean.
 sub parse {
 	my ($class, $stream) = @_;
-	$$stream =~ s/\A([TF])[A-Z]*//p or return;
+	$$stream =~ s/\A([TF])[A-Z_]*//p or return;
 	$class->new($1 eq 'T')
 }
 
 # Dump simply returns the boolean itself, as its tostr conversion is the same as its dump output.
 sub dump {
 	shift
+}
+
+# Checks to see if the second argument is a boolean and equal to the first.
+sub is_equal {
+	my ($lhs, $rhs) = @_;
+	ref $lhs eq ref $rhs && $$lhs == $$rhs
 }
 
 # Comparing booleans converts the second argument to a boolean, and then does numerical comparison.

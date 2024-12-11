@@ -7,8 +7,7 @@ use parent 'Kn::Value';
 use overload 
 	'@{}' => sub {
 		my $num = ${shift()};
-		my @map = map {Kn::Number->new($num < 0 ? -$_ : $_)} split //, abs $num;
-		\@map
+		[map { __PACKAGE__->new($num < 0 ? -$_ : $_) } split //, abs $num]
 	};
 
 # Parses out a `Kn::Number` from the start of a stream.
@@ -44,17 +43,17 @@ sub ascii {
 
 # Adds two Values together by converting them both to numbers.
 sub add {
-	Kn::Number->new(int(shift) + int(shift))
+	__PACKAGE__->new(int(shift) + int(shift))
 }
 
 # Subtract two Values by converting them both to numbers.
 sub sub {
-	Kn::Number->new(int(shift) - int(shift))
+	__PACKAGE__->new(int(shift) - int(shift))
 }
 
 # Multiply two Values by converting them both to numbers.
 sub mul {
-	Kn::Number->new(int(shift) * int(shift))
+	__PACKAGE__->new(int(shift) * int(shift))
 }
 
 # Divides the first number by the second, `die`ing if the second's zero.
@@ -62,7 +61,7 @@ sub div {
 	my $lhs = int shift;
 	my $rhs = int shift or die 'cant divide by zero';
 
-	Kn::Number->new(int $lhs / $rhs)
+	__PACKAGE__->new(int $lhs / $rhs)
 }
 
 # Modulo the first number by the second, `die`ing if the second's zero.
@@ -70,7 +69,7 @@ sub mod {
 	my $lhs = int shift;
 	my $rhs = int shift or die 'cant modulo by zero';
 
-	Kn::Number->new($lhs % $rhs)
+	__PACKAGE__->new($lhs % $rhs)
 }
 
 # Raises the first number to the power of the second.
@@ -80,7 +79,13 @@ sub pow {
 
 	die 'cannot raise zero to a negative power' if !$base && $exp < 0;
 
-	Kn::Number->new(int $base ** $exp)
+	__PACKAGE__->new(int $base ** $exp)
+}
+
+# Checks to see if the second argument is a number and equal to the first.
+sub is_equal {
+	my ($lhs, $rhs) = @_;
+	ref $lhs eq ref $rhs && $$lhs == $$rhs
 }
 
 # Converts both values to integers and compares them.

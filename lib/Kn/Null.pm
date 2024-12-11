@@ -22,16 +22,21 @@ sub new {
 # Returns `undef` if the stream doesn't start with null.
 sub parse {
 	my ($class, $stream) = @_;
-	$$stream =~ s/\AN[A-Z]*//p or return;
+	$$stream =~ s/\AN[A-Z_]*//p or return;
 	$class->new
+}
+
+# Checks to see if the second argument is null
+sub is_equal {
+	ref shift eq ref shift
 }
 
 # You are not allowed to compare null.
 sub compare {
-	die 'Comparing by null is not allowed.'
+	die 'comparing against null is not allowed.'
 }
 
-# Dumps the class's info. Used for debugging.
+# Returns `'null'`.
 sub dump {
 	'null'
 }

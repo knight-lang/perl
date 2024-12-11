@@ -13,35 +13,33 @@ use overload
 	},
 	'@{}'  => sub {
 		my $str = ${shift()};
-		my @list = map {Kn::String->new($_)} split //, $str;
+		my @list = map {__PACKAGE__->new($_)} split //, $str;
 		\@list
 	};
 
 # Converts both arguments to a string and concatenates them.
 sub add {
-	Kn::String->new(shift . shift)
+	__PACKAGE__->new(shift . shift)
 }
 
 # Duplicates the first argument by the second argument's amount.
 sub mul {
-	Kn::String->new(shift() x shift)
+	__PACKAGE__->new(shift() x shift)
 }
 
-# Compares the two strings lexicographically.
+# Compares two strings lexicographically.
 sub compare {
 	"$_[0]" cmp "$_[1]"
 }
 
-# Checks to see if two strings are equal. This differs from `Value`'s in that
-# we check for equality with `eq` not `==`.
+# Checks to see if two strings are equal.
 sub is_equal {
 	my ($lhs, $rhs) = @_;
 	ref $lhs eq ref $rhs && $$lhs eq $$rhs
 }
 
-# Parses a string out, which should start with either `'` or `"`, after which
-# all characters (except for that quote) are taken literally. If the closing
-# quote isn't found, the program fails.
+# Parses a string out, which should start with either `'` or `"`, after which all characters (except
+# for that quote) are taken literally. If the closing quote isn't found, the program fails.
 sub parse {
 	my ($class, $stream) = @_;
 
@@ -51,46 +49,57 @@ sub parse {
 	$class->new($2)
 }
 
-# Dumps the class's info. Used for debugging.
+# Gets a string representation of the string.
 sub dump {
 	my $str = ${shift()};
-	my $dump = '"';
+	my $dump = '';
 
 	foreach (split //, $str) {
-		if ($_ eq "\r") { $dump .= '\r'; next }
-		if ($_ eq "\n") { $dump .= '\n'; next }
-		if ($_ eq "\t") { $dump .= '\t'; next }
-		$dump .= '\\' if $_ eq '\\' || $_ eq '"';
-		$dump .= $_;
+		if ($_ eq "\r") {
+			$dump .= '\r'
+		} elsif ($_ eq "\n") {
+			$dump .= '\n'
+		} elsif ($_ eq "\t") {
+			$dump .= '\t'
+		} else {
+			$dump .= '\\' if $_ eq '\\' || $_ eq '"';
+			$dump .= $_;
+		}
 	}
 
-	$dump . '"'
+	qq("$dump")
 }
 
-# Converts its argument into an ASCII value.
+# Converts the first character into its codepoint.
 sub ascii {
 	my $string = ${shift()};
 	length $string or die 'ascii on empty string';
-	Kn::Number->new(ord($string))
+	Kn::Number->new(ord $string)
 }
 
+# Return a new string of just the first character.
 sub head {
 	my $string = ${shift()};
 	length $string or die 'head on empty string';
 	return __PACKAGE__->new(substr $string, 0, 1)
 }
 
+# Return a new string of everything but the first character.
 sub tail {
 	my $string = ${shift()};
 	length $string or die 'tail on empty string';
 	return __PACKAGE__->new(substr $string, 1)
 }
 
+# Gets a substring of the first argument, starting at the second argument, with a length of the
+# third argument.
 sub get {
 	my ($str, $start, $len) = @_;
 	__PACKAGE__->new(substr $$str, $start, $len)
 }
 
+# Returns a new string where the first argument's string starting at the second argument with length
+# the third argument is replaced with the fourth.
 sub set {
 	my ($str, $start, $len, $repl) = @_;
 	$start = int $start;
