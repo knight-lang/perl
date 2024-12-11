@@ -28,13 +28,13 @@ sub mul {
 }
 
 # Compares the two strings lexicographically.
-sub cmp {
+sub compare {
 	"$_[0]" cmp "$_[1]"
 }
 
 # Checks to see if two strings are equal. This differs from `Value`'s in that
 # we check for equality with `eq` not `==`.
-sub eql {
+sub is_equal {
 	my ($lhs, $rhs) = @_;
 	ref $lhs eq ref $rhs && $$lhs eq $$rhs
 }

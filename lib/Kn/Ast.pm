@@ -23,7 +23,7 @@ sub new {
 }
 
 # An Ast is only equivalent to itself.
-sub eql {
+sub is_equal {
 	use Scalar::Util 'refaddr';
 	my ($lhs, $rhs) = @_;
 

@@ -27,7 +27,7 @@ sub parse {
 }
 
 # You are not allowed to compare null.
-sub cmp {
+sub compare {
 	die 'Comparing by null is not allowed.';
 }
 

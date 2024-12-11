@@ -18,7 +18,7 @@ sub new {
 
 # Checks to see if the first argument is equal to the second by comparing their
 # types and inner data.
-sub eql {
+sub is_equal {
 	my ($lhs, $rhs) = @_;
 	ref $lhs eq ref $rhs && $$lhs == $$rhs
 }

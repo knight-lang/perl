@@ -84,7 +84,7 @@ sub pow {
 }
 
 # Converts both values to integers and compares them.
-sub cmp {
+sub compare {
 	int(shift) <=> int(shift);
 }
 

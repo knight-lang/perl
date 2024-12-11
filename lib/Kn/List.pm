@@ -44,7 +44,7 @@ sub pow {
 }
 
 # Compares the two strings lexicographically.
-sub cmp {
+sub compare {
 	my @lhs = @{shift()};
 	my @rhs = @{shift()};
 
@@ -52,7 +52,7 @@ sub cmp {
 
 	my $cmp;
 	for (my $i = 0; $i <= $minlen; $i++) {
-		$cmp = $lhs[$i]->cmp($rhs[$i]) and return $cmp;
+		$cmp = $lhs[$i]->compare($rhs[$i]) and return $cmp;
 	}
 
 	$#lhs <=> $#rhs;
@@ -60,7 +60,7 @@ sub cmp {
 
 # Checks to see if two strings are equal. This differs from `Value`'s in that
 # we check for equality with `eq` not `==`.
-sub eql {
+sub is_equal {
 	my ($lhs, $rhs) = @_;
 	return unless ref $lhs eq ref $rhs; # Make sure they refer to the same type
 
@@ -69,7 +69,7 @@ sub eql {
 	return unless $#lhs == $#rhs;
 	
 	for (my $i = 0; $i <= $#lhs; $i++) {
-		return unless $lhs[$i]->eql($rhs[$i]);
+		return unless $lhs[$i]->is_equal($rhs[$i]);
 	}
 
 	1;

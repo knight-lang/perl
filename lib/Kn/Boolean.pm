@@ -15,13 +15,13 @@ sub parse {
 	$class->new($1 eq 'T');
 }
 
-# Dumps the class's info. Used for debugging.
+# Dump simply returns the boolean itself, as its tostr conversion is the same as its dump output.
 sub dump {
 	shift;
 }
 
-# Compares the booleans strings lexicographically.
-sub cmp {
+# Comparing booleans converts the second argument to a boolean, and then does numerical comparison.
+sub compare {
 	(!!shift) <=> (!!shift)
 }
 
