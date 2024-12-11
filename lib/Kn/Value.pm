@@ -1,7 +1,7 @@
 package Kn::Value;
 use strict;
 use warnings;
-no warnings 'recursion';
+no warnings qw(recursion);
 
 use overload
 	'""'   => sub { ${shift->run} },

@@ -1,7 +1,7 @@
 package Kn::Function;
 use strict;
 use warnings;
-no warnings 'recursion';
+no warnings qw(recursion);
 
 my %funcs;
 
@@ -15,7 +15,7 @@ sub get {
 sub register {
 	my ($class, $name, $argc, $block) = @_;
 	$name = substr $name, 0, 1 or die 'a name is required';
-	$funcs{$name} = bless { argc => $argc, block => $block }, $class;
+	$funcs{$name} = bless { argc => $argc, name => $name, block => $block }, $class;
 }
 
 sub arity {
@@ -55,7 +55,7 @@ __PACKAGE__->register('C', 1, sub {
 });
 
 # Executes the argument as a shell command, then returns the entire stdout.
-__PACKAGE__->register('`', 1, sub {
+__PACKAGE__->register('$', 1, sub {
 	Kn::String->new(join '', `$_[0]`);
 });
 
