@@ -1,7 +1,7 @@
 package Kn::Value;
 use strict;
 use warnings;
-no warnings qw(recursion);
+no warnings qw(recursion); # Knight does a lot of recursion.
 
 use overload
 	'""'   => sub { ${shift->run} },

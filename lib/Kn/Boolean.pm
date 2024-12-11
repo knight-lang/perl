@@ -1,4 +1,5 @@
 package Kn::Boolean;
+
 use strict;
 use warnings;
 
@@ -12,12 +13,12 @@ use overload
 sub parse {
 	my ($class, $stream) = @_;
 	$$stream =~ s/\A([TF])[A-Z]*//p or return;
-	$class->new($1 eq 'T');
+	$class->new($1 eq 'T')
 }
 
 # Dump simply returns the boolean itself, as its tostr conversion is the same as its dump output.
 sub dump {
-	shift;
+	shift
 }
 
 # Comparing booleans converts the second argument to a boolean, and then does numerical comparison.
